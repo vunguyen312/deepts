@@ -1,10 +1,12 @@
 abstract class BaseNeuron {
     protected weights: number[];
     protected bias: number;
+    protected output: number;
 
     constructor(inputSize: number) {
         this.weights = this.randomVector(inputSize);
         this.bias = Math.random();
+        this.output = 0;
     }
 
     private randomVector(inputSize: number): number[] {
@@ -35,15 +37,20 @@ abstract class BaseNeuron {
     public compute(inputs: number[]): number {
         const linearCombination = this.dot(inputs, this.weights) + this.bias;
         const activationValue = this.activation(linearCombination);
+        this.output = activationValue;
         return activationValue;
     }
 
     public getWeights(): number[] {
-        return [...this.weights];
+        return this.weights;
     }
 
     public getBias(): number {
         return this.bias;
+    }
+
+    public getOutput(): number {
+        return this.output;
     }
 }
 
@@ -96,7 +103,7 @@ abstract class BaseNetwork<T extends BaseNeuron> {
         return valuePassed;
     }
 
-    public cost(desiredActivation: number[], networkActivation: number[]): number {
+    public loss(desiredActivation: number[], networkActivation: number[]): number {
         if (desiredActivation.length !== networkActivation.length) {
             throw new Error("Desired Activation and Network Activation must be of similar length");
         }
@@ -109,7 +116,7 @@ abstract class BaseNetwork<T extends BaseNeuron> {
     }
 
     public train(inputData: number[], expectedOutput: number[]): void {
-
+        const output = this.forwardPass(inputData);
     }
 }
 
@@ -146,7 +153,8 @@ class SigmoidNeuron extends BaseNeuron {
     }
 
     private sigmoidDerivative(x: number): number {
-        return x * (1 - x);
+        const sigmoidValue = this.sigmoid(x);
+        return sigmoidValue * (1 - sigmoidValue);
     }
 
     protected activation(x: number): number {
