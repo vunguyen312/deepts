@@ -1,17 +1,7 @@
-abstract class BaseNeuron {
-    protected weights: number[];
-    protected bias: number;
-    protected output: number;
-
-    constructor(inputSize: number) {
-        this.weights = this.randomVector(inputSize);
-        this.bias = Math.random();
-        this.output = 0;
-    }
-
-    private randomVector(inputSize: number): number[] {
+class Vector {
+    public static randomVector(dim: number): number[] {
         const resultVector: number[] = [];
-        for (let i = 0; i < inputSize; i++) {
+        for (let i = 0; i < dim; i++) {
             const randomValue = Math.random();
             resultVector.push(randomValue);
         }
@@ -19,9 +9,7 @@ abstract class BaseNeuron {
         return resultVector;
     }
 
-    protected abstract activation(x: number): number;
-
-    protected dot(vec1: number[], vec2: number[]) {
+    public static dot(vec1: number[], vec2: number[]): number {
         if (vec1.length !== vec2.length) {
             throw new Error('Vectors are not of the same length');
         }
@@ -34,10 +22,54 @@ abstract class BaseNeuron {
         return sum;
     }
 
+    public static scalarMul(scalar: number, vec: number[]): number[] {
+        const result = [...vec];
+        for (let i = 0; i < vec.length; i++) {
+            result[i] *= scalar;
+        }
+
+        return result;
+    }
+
+    public static add(vec1: number[], vec2: number[]): number[] {
+        if (vec1.length !== vec2.length) {
+            throw new Error('Vectors are not of the same length');
+        }
+
+        const result = [...vec1];
+        for (let i = 0; i < vec1.length; i++) {
+            result[i] += vec2[i];
+        }
+
+        return result;
+    }
+}
+
+abstract class BaseNeuron {
+    protected inputs: number[];
+    protected weights: number[];
+    protected bias: number;
+    protected weightedSum: number;
+
+    constructor(inputSize: number) {
+        this.inputs = [];
+        this.weights = Vector.randomVector(inputSize);
+        this.bias = Math.random();
+        this.weightedSum = 0;
+    }
+
+    protected abstract activation(x: number): number;
+
+    public updateParams(learningRate: number, delta: number): void {
+        const updateStep = Vector.scalarMul(learningRate * delta, this.inputs);
+        this.weights = Vector.add(this.weights, updateStep);
+        this.bias += learningRate * delta;
+    }
+
     public compute(inputs: number[]): number {
-        const linearCombination = this.dot(inputs, this.weights) + this.bias;
-        const activationValue = this.activation(linearCombination);
-        this.output = activationValue;
+        this.inputs = inputs;
+        this.weightedSum = Vector.dot(inputs, this.weights) + this.bias;
+        const activationValue = this.activation(this.weightedSum);
         return activationValue;
     }
 
@@ -49,8 +81,8 @@ abstract class BaseNeuron {
         return this.bias;
     }
 
-    public getOutput(): number {
-        return this.output;
+    public getWeightedSum(): number {
+        return this.weightedSum;
     }
 }
 
@@ -103,7 +135,7 @@ abstract class BaseNetwork<T extends BaseNeuron> {
         return valuePassed;
     }
 
-    public loss(desiredActivation: number[], networkActivation: number[]): number {
+    private loss(desiredActivation: number[], networkActivation: number[]): number {
         if (desiredActivation.length !== networkActivation.length) {
             throw new Error("Desired Activation and Network Activation must be of similar length");
         }
@@ -117,6 +149,8 @@ abstract class BaseNetwork<T extends BaseNeuron> {
 
     public train(inputData: number[], expectedOutput: number[]): void {
         const output = this.forwardPass(inputData);
+
+        const errors = this.loss(expectedOutput, output);
     }
 }
 
