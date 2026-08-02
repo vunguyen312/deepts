@@ -117,7 +117,7 @@ abstract class BaseLayer<T extends BaseNeuron> {
         return this.neurons.map(neuron => neuron.compute(inputs));
     }
 
-    public trainLayer(learningRate: number, errors: number[]): number[] {
+    public backward(learningRate: number, errors: number[]): number[] {
         const deltas = this.neurons.map((neuron, i) => 
             neuron.computeDelta(errors[i])
         );
@@ -166,7 +166,7 @@ abstract class BaseNetwork<T extends BaseNeuron> {
 
         let errors = expectedOutput.map((target, i) => target - output[i]);
         for (let i = this.layers.length - 1; i >= 0; i--) {
-            errors = this.layers[i].trainLayer(this.learningRate, errors);
+            errors = this.layers[i].backward(this.learningRate, errors);
         }
     }
 }
