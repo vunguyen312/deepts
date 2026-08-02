@@ -60,6 +60,12 @@ abstract class BaseNeuron {
 
     protected abstract activation(x: number): number;
 
+    protected abstract activationDerivative(x: number): number;
+
+    public computeDelta(error: number): number {
+        return error * this.activationDerivative(this.weightedSum);
+    }
+
     public updateParams(learningRate: number, delta: number): void {
         const updateStep = Vector.scalarMul(learningRate * delta, this.inputs);
         this.weights = Vector.add(this.weights, updateStep);
@@ -110,6 +116,26 @@ abstract class BaseLayer<T extends BaseNeuron> {
     public forward(inputs: number[]): number[] {
         return this.neurons.map(neuron => neuron.compute(inputs));
     }
+
+    public trainLayer(learningRate: number, errors: number[]): number[] {
+        const deltas = this.neurons.map((neuron, i) => 
+            neuron.computeDelta(errors[i])
+        );
+
+        const prevErrors: number[] = new Array(this.inputSize).fill(0);
+        for (let i = 0; i < this.neurons.length; i++) {
+            const weights = this.neurons[i].getWeights();
+            for (let j = 0; j < this.inputSize; j++) {
+                prevErrors[j] += weights[j] * deltas[i];
+            }
+        }
+
+        this.neurons.map((neuron, i) => 
+            neuron.updateParams(learningRate, deltas[i])
+        );
+
+        return prevErrors;
+    }
 }
 
 abstract class BaseNetwork<T extends BaseNeuron> {
@@ -135,22 +161,13 @@ abstract class BaseNetwork<T extends BaseNeuron> {
         return valuePassed;
     }
 
-    private loss(desiredActivation: number[], networkActivation: number[]): number {
-        if (desiredActivation.length !== networkActivation.length) {
-            throw new Error("Desired Activation and Network Activation must be of similar length");
-        }
-
-        let result = 0;
-        for (let i = 0; i < desiredActivation.length; i++) {
-            result += (desiredActivation[i] - networkActivation[i])**2;
-        }
-        return result;
-    }
-
     public train(inputData: number[], expectedOutput: number[]): void {
         const output = this.forwardPass(inputData);
 
-        const errors = this.loss(expectedOutput, output);
+        let errors = expectedOutput.map((target, i) => target - output[i]);
+        for (let i = this.layers.length - 1; i >= 0; i--) {
+            errors = this.layers[i].trainLayer(this.learningRate, errors);
+        }
     }
 }
 
@@ -164,6 +181,10 @@ class Perceptron extends BaseNeuron {
 
     protected activation(x: number): number {
         return this.step(x);
+    }
+
+    protected activationDerivative(x: number): number {
+        return 0;
     }
 }
 
@@ -194,6 +215,10 @@ class SigmoidNeuron extends BaseNeuron {
     protected activation(x: number): number {
         return this.sigmoid(x);
     }
+
+    protected activationDerivative(x: number): number {
+        return this.sigmoidDerivative(x);
+    }
 }
 
 class SigmoidLayer extends BaseLayer<SigmoidNeuron> {
@@ -212,7 +237,18 @@ class SigmoidLayer extends BaseLayer<SigmoidNeuron> {
 
 class SigmoidNetwork extends BaseNetwork<SigmoidNeuron> {}
 
-const layer1 = new SigmoidLayer(4, 4);
-const layer2 = new SigmoidLayer(4, 1);
+const layer1 = new SigmoidLayer(2, 3);
+const layer2 = new SigmoidLayer(3, 1);
 
-const network = new SigmoidNetwork([layer1, layer2], 2);
+const network = new SigmoidNetwork([layer1, layer2], 0.1);
+
+for (let i = 0; i < 20000; i++) {
+    network.train([0, 1], [1]);
+    network.train([1, 1], [0]);
+    network.train([1, 0], [1]);
+    network.train([0, 0], [0]);
+}
+
+console.log(network.forwardPass([1, 0]));
+console.log(network.forwardPass([0, 0]));
+console.log(network.forwardPass([1, 1]));
