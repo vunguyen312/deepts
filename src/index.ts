@@ -1,12 +1,11 @@
 class Vector {
-    public static randomVector(dim: number): number[] {
-        const resultVector: number[] = [];
-        for (let i = 0; i < dim; i++) {
-            const randomValue = Math.random();
-            resultVector.push(randomValue);
+    public static randomVector(fanIn: number, fanOut: number): number[] {
+        const a = Math.sqrt(6 / (fanIn + fanOut));
+        const result: number[] = [];
+        for (let i = 0; i < fanIn; i++) {
+            result.push(Math.random() * 2 * a - a);
         }
-
-        return resultVector;
+        return result;
     }
 
     public static dot(vec1: number[], vec2: number[]): number {
@@ -51,9 +50,9 @@ abstract class BaseNeuron {
     protected bias: number;
     protected weightedSum: number;
 
-    constructor(inputSize: number) {
+    constructor(inputSize: number, outputSize: number) {
         this.inputs = [];
-        this.weights = Vector.randomVector(inputSize);
+        this.weights = Vector.randomVector(inputSize, outputSize);
         this.bias = Math.random();
         this.weightedSum = 0;
     }
@@ -192,7 +191,7 @@ class PerceptronLayer extends BaseLayer<Perceptron> {
     protected spawnNeurons(): Perceptron[] {
         const neurons: Perceptron[] = [];
         for (let i = 0; i < this.outputSize; i++) {
-            const neuron = new Perceptron(this.inputSize);
+            const neuron = new Perceptron(this.inputSize, this.outputSize);
             neurons.push(neuron);
         }
 
@@ -225,7 +224,7 @@ class SigmoidLayer extends BaseLayer<SigmoidNeuron> {
     protected spawnNeurons(): SigmoidNeuron[] {
         const neurons: SigmoidNeuron[] = [];
         for (let i = 0; i < this.outputSize; i++) {
-            const neuron = new SigmoidNeuron(this.inputSize);
+            const neuron = new SigmoidNeuron(this.inputSize, this.outputSize);
             console.log("WEIGHTS: " + neuron.getWeights());
             console.log("BIAS: " + neuron.getBias());
             neurons.push(neuron);
