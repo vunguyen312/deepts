@@ -44,6 +44,54 @@ class Vector {
     }
 }
 
+class Matrix {
+    public static zeroMat(rowLength: number, colLength: number): number[][] {
+        const result: number[][] = [];
+        for (let i = 0; i < colLength; i++) {
+            const row = new Array(rowLength).fill(0);
+            result.push(row);
+        }
+
+        return result;
+    }
+
+    public static mul(mat1: number[][], mat2: number[][]): number[][] {
+        const rowLength = mat2[0].length;
+        const colLength = mat1.length;
+        const result = Matrix.zeroMat(rowLength, colLength);
+        for (let i = 0; i < rowLength; i++) {
+            const ithCol = Matrix.getCol(mat2, i);
+            for (let j = 0; j < colLength; j++) {
+                result[j][i] = Vector.dot(mat1[j], ithCol);
+            }
+        }
+
+        return result;
+    }
+
+    public static transpose(mat: number[][]): number[][] {
+        const rowLength = mat[0].length;
+        const colLength = mat.length;
+        const result = Matrix.zeroMat(colLength, rowLength);
+        for (let i = 0; i < rowLength; i++) {
+            for (let j = 0; j < colLength; j++) {
+                result[i][j] = mat[j][i];
+            }
+        }
+
+        return result;
+    }
+
+    public static getCol(mat: number[][], j: number): number[] {
+        const result: number[] = [];
+        for (let i = 0; i < mat.length; i++) {
+            result.push(mat[i][j]);
+        }
+
+        return result;
+    }
+}
+
 abstract class BaseNeuron {
     protected inputs: number[];
     protected weights: number[];
@@ -121,19 +169,24 @@ abstract class BaseLayer<T extends BaseNeuron> {
             neuron.computeDelta(errors[i])
         );
 
-        const prevErrors: number[] = new Array(this.inputSize).fill(0);
-        for (let i = 0; i < this.neurons.length; i++) {
-            const weights = this.neurons[i].getWeights();
-            for (let j = 0; j < this.inputSize; j++) {
-                prevErrors[j] += weights[j] * deltas[i];
-            }
-        }
+        const weights = this.getLayerWeights();
+        const weightsT = Matrix.transpose(weights);
+
+        const deltaCol = deltas.map(d => [d]);
+        const prevErrorsMat = Matrix.mul(weightsT, deltaCol);
+        const prevErrors = prevErrorsMat.map(row => row[0]);
 
         this.neurons.map((neuron, i) => 
             neuron.updateParams(learningRate, deltas[i])
         );
 
         return prevErrors;
+    }
+
+    private getLayerWeights(): number[][] {
+        return this.neurons.map(neuron => 
+            neuron.getWeights()
+        );
     }
 }
 
