@@ -79,6 +79,3 @@ export class Matrix {
         return result;
     }
 }
-
-//console.log(Matrix.mul([[-1, 2], [4, 3]], [[9, 6], [-3, 1]]));
-//throw Error;
