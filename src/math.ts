@@ -58,8 +58,6 @@ export class Matrix {
     public static mul(mat1: number[][], mat2: number[][]): number[][] {
         const rowLength = mat2.length;
         const colLength = mat1[0].length;
-        //console.log(mat1, rowLength);
-        //console.log(mat2, colLength);
         const result = Matrix.zeroMat(rowLength, colLength);
         for (let i = 0; i < colLength; i++) {
             const jthRow = Matrix.getRow(mat1, i);
