@@ -18,6 +18,10 @@ class Perceptron extends BaseNeuron {
 }
 
 class PerceptronLayer extends BaseLayer<Perceptron> {
+    protected getActivationFunction(): string {
+        return "step";
+    }
+
     protected spawnNeurons(): Perceptron[] {
         const neurons: Perceptron[] = [];
         for (let i = 0; i < this.outputSize; i++) {
@@ -51,6 +55,10 @@ class SigmoidNeuron extends BaseNeuron {
 }
 
 class SigmoidLayer extends BaseLayer<SigmoidNeuron> {
+    protected getActivationFunction(): string {
+        return "sigmoid";
+    }
+
     protected spawnNeurons(): SigmoidNeuron[] {
         const neurons: SigmoidNeuron[] = [];
         for (let i = 0; i < this.outputSize; i++) {
@@ -81,3 +89,4 @@ for (let i = 0; i < 20000; i++) {
 console.log(network.forwardPass([1, 0]));
 console.log(network.forwardPass([0, 0]));
 console.log(network.forwardPass([1, 1]));
+network.freezeToJSON();

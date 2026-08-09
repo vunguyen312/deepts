@@ -1,4 +1,5 @@
 import { Vector, Matrix } from './math';
+import { writeFile } from 'fs';
 
 interface FrozenNeuron {
     weights: number[];
@@ -6,6 +7,7 @@ interface FrozenNeuron {
 }
 
 interface FrozenLayer {
+    activationFunction: string;
     inputSize: number;
     outputSize: number;
     neurons: FrozenNeuron[];
@@ -13,7 +15,7 @@ interface FrozenLayer {
 
 interface FrozenNetwork {
     learningRate: number;
-    layers: FrozenLayer[]
+    layers: FrozenLayer[];
 }
 
 export abstract class BaseNeuron {
@@ -61,9 +63,17 @@ export abstract class BaseNeuron {
     public getWeightedSum(): number {
         return this.weightedSum;
     }
+
+    public freeze(): FrozenNeuron {
+        return {
+            weights: this.weights,
+            bias: this.bias
+        };
+    }
 }
 
 export abstract class BaseLayer<T extends BaseNeuron> {
+    protected readonly activationFunction: string;
     protected inputSize: number;
     protected outputSize: number;
     protected neurons: T[];
@@ -77,10 +87,13 @@ export abstract class BaseLayer<T extends BaseNeuron> {
             throw new Error("Layer must have one or more outputs");
         }
 
+        this.activationFunction = this.getActivationFunction();
         this.inputSize = inputSize;
         this.outputSize = outputSize;
         this.neurons = this.spawnNeurons();
     }
+
+    protected abstract getActivationFunction(): string;
 
     protected abstract spawnNeurons(): T[];
 
@@ -108,6 +121,15 @@ export abstract class BaseLayer<T extends BaseNeuron> {
         return this.neurons.map(neuron => 
             neuron.getWeights()
         );
+    }
+
+    public freeze(): FrozenLayer {
+        return {
+            activationFunction: this.activationFunction,
+            inputSize: this.inputSize,
+            outputSize: this.outputSize,
+            neurons: this.neurons.map(neuron => neuron.freeze())
+        };
     }
 }
 
@@ -141,5 +163,25 @@ export abstract class BaseNetwork<T extends BaseNeuron> {
         for (let i = this.layers.length - 1; i >= 0; i--) {
             errors = this.layers[i].backward(this.learningRate, errors);
         }
+    }
+
+    private freeze(): FrozenNetwork {
+        return {
+            learningRate: this.learningRate,
+            layers: this.layers.map(layer => layer.freeze())
+        };
+    }
+
+    public freezeToJSON(): void {
+        const frozenNetwork = this.freeze();
+        const jsonNetwork = JSON.stringify(frozenNetwork, null, 4);
+
+        writeFile('weights.json', jsonNetwork, 'utf8', err => {
+            if (err) {
+                console.error('There was a problem saving weights to JSON!');
+                return;
+            }
+            console.log('Weights successfully saved.');
+        });
     }
 }
