@@ -1,5 +1,4 @@
 import { Vector, Matrix } from './math';
-import { writeFile } from 'fs';
 
 interface FrozenNeuron {
     weights: number[];
@@ -165,23 +164,10 @@ export abstract class BaseNetwork<T extends BaseNeuron> {
         }
     }
 
-    private freeze(): FrozenNetwork {
+    public freeze(): FrozenNetwork {
         return {
             learningRate: this.learningRate,
             layers: this.layers.map(layer => layer.freeze())
         };
-    }
-
-    public freezeToJSON(): void {
-        const frozenNetwork = this.freeze();
-        const jsonNetwork = JSON.stringify(frozenNetwork, null, 4);
-
-        writeFile('weights.json', jsonNetwork, 'utf8', err => {
-            if (err) {
-                console.error('There was a problem saving weights to JSON!');
-                return;
-            }
-            console.log('Weights successfully saved.');
-        });
     }
 }

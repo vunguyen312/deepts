@@ -119,7 +119,7 @@ class BaseNetwork {
     freezeToJSON() {
         const frozenNetwork = this.freeze();
         const jsonNetwork = JSON.stringify(frozenNetwork, null, 4);
-        (0, fs_1.writeFile)('weights.json', jsonNetwork, 'utf8', err => {
+        (0, fs_1.writeFile)('./src/weights/weights.json', jsonNetwork, 'utf8', err => {
             if (err) {
                 console.error('There was a problem saving weights to JSON!');
                 return;

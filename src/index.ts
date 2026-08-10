@@ -89,4 +89,3 @@ for (let i = 0; i < 20000; i++) {
 console.log(network.forwardPass([1, 0]));
 console.log(network.forwardPass([0, 0]));
 console.log(network.forwardPass([1, 1]));
-network.freezeToJSON();
