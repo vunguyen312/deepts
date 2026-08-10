@@ -1,4 +1,4 @@
-# TS ML Library
+# TypeScript Machine Learning Library
 
 <p align="center">
     <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=TypeScript&logoColor=white" />
@@ -27,8 +27,8 @@ This project is ideal for:
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/vunguyen312/ml_lib.git
-cd ml_lib
+git clone https://github.com/vunguyen312/ml-lib.git
+cd ml-lib
 ```
 
 ### 2. Install Dependencies
