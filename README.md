@@ -41,6 +41,9 @@ npm install
 ### XOR Neural Network
 Below is an example of a small 3-layer neural network trained to solve the XOR problem
 ```typescript
+import { NeuralNetwork } from "./neuralNetwork";
+import SigmoidLayer from "./activations/sigmoid";
+
 const layer1 = new SigmoidLayer(2, 3);
 const layer2 = new SigmoidLayer(3, 1);
 

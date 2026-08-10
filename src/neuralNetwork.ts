@@ -71,12 +71,12 @@ export abstract class BaseNeuron {
     }
 }
 
-export abstract class BaseLayer<T extends BaseNeuron> {
+export abstract class BaseLayer {
     protected readonly activationFunction: string;
     protected inputSize: number;
     protected outputSize: number;
-    protected neurons: T[];
-    
+    protected neurons: BaseNeuron[];
+
     constructor(inputSize: number, outputSize: number) {
         if (inputSize <= 0) {
             throw new Error("Layer must have one or more inputs.");
@@ -94,7 +94,7 @@ export abstract class BaseLayer<T extends BaseNeuron> {
 
     protected abstract getActivationFunction(): string;
 
-    protected abstract spawnNeurons(): T[];
+    protected abstract spawnNeurons(): BaseNeuron[];
 
     public forward(inputs: number[]): number[] {
         return this.neurons.map(neuron => neuron.compute(inputs));
@@ -132,11 +132,11 @@ export abstract class BaseLayer<T extends BaseNeuron> {
     }
 }
 
-export abstract class BaseNetwork<T extends BaseNeuron> {
-    protected layers: BaseLayer<T>[];
+export class NeuralNetwork {
+    protected layers: BaseLayer[];
     protected learningRate: number;
 
-    constructor(layers: BaseLayer<T>[], learningRate: number) {
+    constructor(layers: BaseLayer[], learningRate: number) {
         if (layers.length === 0) {
             throw new Error("Network must have at least one layer.");
         }

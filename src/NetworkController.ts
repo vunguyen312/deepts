@@ -1,17 +1,17 @@
-import { BaseNeuron, BaseLayer, BaseNetwork } from './baseNetwork';
+import { BaseLayer, NeuralNetwork } from './neuralNetwork';
 import { writeFile } from 'fs';
 
-export default class NetworkController<T extends BaseNeuron> {
-    private network: BaseNetwork<T>;
+export default class NetworkController {
+    private network: NeuralNetwork;
 
-    public constructor(network: BaseNetwork<T>) {
+    public constructor(network: NeuralNetwork) {
         this.network = network;
     }
 
     public createNetwork(
-        layers: BaseLayer<T>[],
+        layers: BaseLayer[],
         learningRate: number,
-        factory: (layers: BaseLayer<T>[], learningRate: number) => BaseNetwork<T>,
+        factory: (layers: BaseLayer[], learningRate: number) => NeuralNetwork,
     ): void {
         this.network = factory(layers, learningRate);
     }
