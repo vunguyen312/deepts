@@ -27,8 +27,8 @@ This project is ideal for:
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/vunguyen312/ml-lib.git
-cd ml-lib
+git clone https://github.com/vunguyen312/deepts.git
+cd deepts
 ```
 
 ### 2. Install Dependencies
@@ -62,7 +62,7 @@ for (let i = 0; i < 20000; i++) {
 console.log(network.forwardPass([1, 0]));
 console.log(network.forwardPass([0, 0]));
 console.log(network.forwardPass([1, 1]));
-NetworkController.freezeToJSON(network, "./src/weights/weights.json");
+NetworkController.freezeToJSON(network, "./src/models/weights.json");
 ```
 
 ## Contributing

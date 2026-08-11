@@ -21,6 +21,10 @@ export const sigmoid: Activation = {
     }
 };
 
+// Wanted to keep a single source of truth for an activation mapping but
+// didn't know how to do it. Thanks Deepseek V4 Flash 0731 for the help ^-^!
+// Will probably be the only and last AI contribution since this is a learning
+// project.
 export const activationMap = {
     step,
     relu,

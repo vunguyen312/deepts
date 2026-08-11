@@ -1,3 +1,5 @@
+// Waterloo MATH136 trauma #thosewhoknow
+
 export class Vector {
     public static randomVector(fanIn: number, fanOut: number): number[] {
         const a = Math.sqrt(6 / (fanIn + fanOut));

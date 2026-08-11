@@ -1,5 +1,5 @@
-import { Vector, Matrix } from "./math";
-import { Activation, ActivationFunc, activationMap } from "./activations";
+import { Vector, Matrix } from "./math/math";
+import { Activation, ActivationFunc, activationMap } from "./math/activations";
 
 interface FrozenNeuron {
     weights: number[];
@@ -175,6 +175,7 @@ export class NeuralNetwork {
         return valuePassed;
     }
 
+    // TODO: add batching
     public train(inputData: number[], expectedOutput: number[]): void {
         const output = this.forwardPass(inputData);
 
