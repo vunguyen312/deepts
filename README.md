@@ -10,6 +10,18 @@
   <b> A tiny deep learning library written in TypeScript.</b>
 </p>
 
+------------------------------------------------------------------------
+
+## Table of Contents
+
+-   [About](#about)
+-   [Installation](#installation)
+-   [Examples](#examples)
+-   [Contributing](#contributing)
+-   [License](#license)
+
+------------------------------------------------------------------------
+
 ## About
 
 This is a small learning project built for understanding the fundamentals of deep learning.
@@ -22,6 +34,8 @@ This project is ideal for:
 
 -   People new to deep learning looking to learn the basics
 -   TypeScript developers looking for a high level deep learning experience
+
+------------------------------------------------------------------------
 
 ## Installation
 
@@ -80,6 +94,8 @@ console.log(network.forwardPass([0, 0]));
 console.log(network.forwardPass([1, 1]));
 ```
 
+------------------------------------------------------------------------
+
 ## Contributing
 
 Contributions are welcome.
@@ -89,6 +105,8 @@ Contributions are welcome.
 3.  Commit your changes
 4.  Push to your branch
 5.  Open a pull request
+
+------------------------------------------------------------------------
 
 ## License
 
