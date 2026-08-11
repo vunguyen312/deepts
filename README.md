@@ -1,4 +1,4 @@
-# TypeScript Deep Learning Library
+# deep.ts
 
 <p align="center">
     <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=TypeScript&logoColor=white" />
