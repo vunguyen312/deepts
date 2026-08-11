@@ -1,4 +1,4 @@
-# TypeScript Machine Learning Library
+# TypeScript Deep Learning Library
 
 <p align="center">
     <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=TypeScript&logoColor=white" />
@@ -7,21 +7,21 @@
 </p>
 
 <p align="center">
-  <b> A tiny machine learning library written in TypeScript.</b>
+  <b> A tiny deep learning library written in TypeScript.</b>
 </p>
 
 ## About
 
-This is a small learning project built for understanding the fundamentals of machine learning.
+This is a small learning project built for understanding the fundamentals of deep learning.
 It provides a top-level overview of neural network construction.
 
-I know what you're thinking: What kind of nutjob would write a machine learning library from 
+I know what you're thinking: What kind of nutjob would write a deep learning library from 
 scratch in TypeScript? Yes, I'm that sicko. This was quite a fun project so I regret nothing!
 
 This project is ideal for:
 
--   People new to ML looking to learn the basics
--   A high-level ML experience similar to PyTorch but on TypeScript
+-   People new to deep learning looking to learn the basics
+-   TypeScript developers looking for a high level deep learning experience
 
 ## Installation
 
@@ -41,13 +41,16 @@ npm install
 ### XOR Neural Network
 Below is an example of a small 3-layer neural network trained to solve the XOR problem
 ```typescript
-import { NeuralNetwork } from "./neuralNetwork";
+import NetworkController from "./NetworkController";
 import SigmoidLayer from "./activations/sigmoid";
 
-const layer1 = new SigmoidLayer(2, 3);
-const layer2 = new SigmoidLayer(3, 1);
-
-const network = new SigmoidNetwork([layer1, layer2], 0.1);
+const network = NetworkController.createNetwork(
+    [
+        new SigmoidLayer(2, 3), 
+        new SigmoidLayer(3, 1)
+    ], 
+    0.1
+);
 
 for (let i = 0; i < 20000; i++) {
     network.train([0, 1], [1]);
@@ -59,6 +62,7 @@ for (let i = 0; i < 20000; i++) {
 console.log(network.forwardPass([1, 0]));
 console.log(network.forwardPass([0, 0]));
 console.log(network.forwardPass([1, 1]));
+NetworkController.freezeToJSON(network, "./src/weights/weights.json");
 ```
 
 ## Contributing
