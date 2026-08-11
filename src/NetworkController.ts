@@ -1,31 +1,48 @@
-import { BaseLayer, NeuralNetwork } from './neuralNetwork';
-import { writeFile } from 'fs';
+import { Neuron, Layer, NeuralNetwork, FrozenLayer, FrozenNetwork } from "./neuralNetwork";
+import { writeFile } from "fs";
+import { activationMap } from "./activations";
 
 export default class NetworkController {
-    private network: NeuralNetwork;
-
-    public constructor(network: NeuralNetwork) {
-        this.network = network;
+    public static createNetwork(layers: Layer[], 
+                                learningRate: number): NeuralNetwork {
+        return new NeuralNetwork(layers, learningRate);
     }
 
-    public createNetwork(
-        layers: BaseLayer[],
-        learningRate: number,
-        factory: (layers: BaseLayer[], learningRate: number) => NeuralNetwork,
-    ): void {
-        this.network = factory(layers, learningRate);
-    }
-
-    public freezeToJSON(): void {
-        const frozenNetwork = this.network.freeze();
+    public static async freezeToJSON(network: NeuralNetwork, 
+                                     path: string): Promise<void> {
+        const frozenNetwork = network.freeze();
         const jsonNetwork = JSON.stringify(frozenNetwork, null, 4);
-
-        writeFile('./src/weights/weights.json', jsonNetwork, 'utf8', err => {
+        
+        console.log("Loading model...");
+        await writeFile(path, jsonNetwork, "utf8", err => {
             if (err) {
-                console.error('There was a problem saving weights to JSON!');
+                console.error("There was a problem saving weights to JSON!");
                 return;
             }
-            console.log('Weights successfully saved.');
         });
+    }
+
+    private static loadNeurons(layer: FrozenLayer): Neuron[] {
+        const neurons: Neuron[] = [];
+        for (const neuron of layer.neurons) {
+            const newNeuron = new Neuron(activationMap[layer.activation],
+                                         neuron.weights, neuron.bias);
+            neurons.push(newNeuron);
+        }
+
+        return neurons;
+    }
+
+    public static loadNetwork(frozenNetwork: FrozenNetwork): NeuralNetwork {
+        const layers: Layer[] = [];
+
+        for (const layer of frozenNetwork.layers) {
+            const neurons = NetworkController.loadNeurons(layer);
+            const newLayer = new Layer(layer.activation, layer.inputSize, 
+                                       layer.outputSize, neurons);
+            layers.push(newLayer);
+        }
+
+        return new NeuralNetwork(layers, frozenNetwork.learningRate);
     }
 }

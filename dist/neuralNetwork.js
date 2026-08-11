@@ -1,20 +1,28 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.NeuralNetwork = exports.BaseLayer = exports.BaseNeuron = void 0;
+exports.NeuralNetwork = exports.Layer = exports.Neuron = void 0;
 const math_1 = require("./math");
-class BaseNeuron {
+const activations_1 = require("./activations");
+class Neuron {
+    activation;
     inputs;
     weights;
     bias;
     weightedSum;
-    constructor(inputSize, outputSize) {
+    constructor(activation, arg1, arg2) {
+        this.activation = activation;
         this.inputs = [];
-        this.weights = math_1.Vector.randomVector(inputSize, outputSize);
-        this.bias = Math.random();
         this.weightedSum = 0;
+        if (typeof arg1 === 'number') {
+            this.weights = math_1.Vector.randomVector(arg1, arg2);
+            this.bias = Math.random();
+            return;
+        }
+        this.weights = arg1;
+        this.bias = arg2;
     }
     computeDelta(error) {
-        return error * this.activationDerivative(this.weightedSum);
+        return error * this.activation.derivative(this.weightedSum);
     }
     updateParams(learningRate, delta) {
         const updateStep = math_1.Vector.scalarMul(learningRate * delta, this.inputs);
@@ -24,7 +32,7 @@ class BaseNeuron {
     compute(inputs) {
         this.inputs = inputs;
         this.weightedSum = math_1.Vector.dot(inputs, this.weights) + this.bias;
-        const activationValue = this.activation(this.weightedSum);
+        const activationValue = this.activation.fn(this.weightedSum);
         return activationValue;
     }
     getWeights() {
@@ -43,23 +51,31 @@ class BaseNeuron {
         };
     }
 }
-exports.BaseNeuron = BaseNeuron;
-class BaseLayer {
-    activationFunction;
+exports.Neuron = Neuron;
+class Layer {
+    activation;
     inputSize;
     outputSize;
     neurons;
-    constructor(inputSize, outputSize) {
+    constructor(activation, inputSize, outputSize, neurons) {
         if (inputSize <= 0) {
             throw new Error("Layer must have one or more inputs.");
         }
         if (outputSize <= 0) {
             throw new Error("Layer must have one or more outputs");
         }
-        this.activationFunction = this.getActivationFunction();
+        this.activation = activation;
         this.inputSize = inputSize;
         this.outputSize = outputSize;
-        this.neurons = this.spawnNeurons();
+        this.neurons = neurons || this.spawnNeurons();
+    }
+    spawnNeurons() {
+        const neurons = [];
+        for (let i = 0; i < this.outputSize; i++) {
+            const neuron = new Neuron(activations_1.activationMap[this.activation], this.inputSize, this.outputSize);
+            neurons.push(neuron);
+        }
+        return neurons;
     }
     forward(inputs) {
         return this.neurons.map(neuron => neuron.compute(inputs));
@@ -77,14 +93,14 @@ class BaseLayer {
     }
     freeze() {
         return {
-            activationFunction: this.activationFunction,
+            activation: this.activation,
             inputSize: this.inputSize,
             outputSize: this.outputSize,
             neurons: this.neurons.map(neuron => neuron.freeze())
         };
     }
 }
-exports.BaseLayer = BaseLayer;
+exports.Layer = Layer;
 class NeuralNetwork {
     layers;
     learningRate;

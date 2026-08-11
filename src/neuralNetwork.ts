@@ -1,41 +1,53 @@
-import { Vector, Matrix } from './math';
+import { Vector, Matrix } from "./math";
+import { Activation, ActivationFunc, activationMap } from "./activations";
 
 interface FrozenNeuron {
     weights: number[];
     bias: number;
 }
 
-interface FrozenLayer {
-    activationFunction: string;
+export interface FrozenLayer {
+    // Keep to layer level for now. I don't think libs like PyTorch allow
+    // for control of activation funcs at the neuron level (?)
+    activation: ActivationFunc;
     inputSize: number;
     outputSize: number;
     neurons: FrozenNeuron[];
 }
 
-interface FrozenNetwork {
+export interface FrozenNetwork {
     learningRate: number;
     layers: FrozenLayer[];
 }
 
-export abstract class BaseNeuron {
+export class Neuron {
+    private readonly activation: Activation;
     protected inputs: number[];
     protected weights: number[];
     protected bias: number;
     protected weightedSum: number;
 
-    constructor(inputSize: number, outputSize: number) {
+    constructor(activation: Activation, weights: number[], bias: number);
+
+    constructor(activation: Activation, inputSize: number, outputSize: number);
+
+    constructor(activation: Activation, 
+                arg1: number | number[], arg2: number) {
+        this.activation = activation;
         this.inputs = [];
-        this.weights = Vector.randomVector(inputSize, outputSize);
-        this.bias = Math.random();
         this.weightedSum = 0;
+
+        if (typeof arg1 === 'number') {
+            this.weights = Vector.randomVector(arg1, arg2);
+            this.bias = Math.random();
+            return;
+        }
+        this.weights = arg1;
+        this.bias = arg2;
     }
 
-    protected abstract activation(x: number): number;
-
-    protected abstract activationDerivative(x: number): number;
-
     public computeDelta(error: number): number {
-        return error * this.activationDerivative(this.weightedSum);
+        return error * this.activation.derivative(this.weightedSum);
     }
 
     public updateParams(learningRate: number, delta: number): void {
@@ -47,7 +59,7 @@ export abstract class BaseNeuron {
     public compute(inputs: number[]): number {
         this.inputs = inputs;
         this.weightedSum = Vector.dot(inputs, this.weights) + this.bias;
-        const activationValue = this.activation(this.weightedSum);
+        const activationValue = this.activation.fn(this.weightedSum);
         return activationValue;
     }
 
@@ -71,13 +83,14 @@ export abstract class BaseNeuron {
     }
 }
 
-export abstract class BaseLayer {
-    protected readonly activationFunction: string;
+export class Layer {
+    private readonly activation: ActivationFunc;
     protected inputSize: number;
     protected outputSize: number;
-    protected neurons: BaseNeuron[];
+    protected neurons: Neuron[];
 
-    constructor(inputSize: number, outputSize: number) {
+    constructor(activation: ActivationFunc, inputSize: number, outputSize: number, 
+                neurons?: Neuron[]) {
         if (inputSize <= 0) {
             throw new Error("Layer must have one or more inputs.");
         }
@@ -86,15 +99,22 @@ export abstract class BaseLayer {
             throw new Error("Layer must have one or more outputs");
         }
 
-        this.activationFunction = this.getActivationFunction();
+        this.activation = activation;
         this.inputSize = inputSize;
         this.outputSize = outputSize;
-        this.neurons = this.spawnNeurons();
+        this.neurons = neurons || this.spawnNeurons();
     }
 
-    protected abstract getActivationFunction(): string;
-
-    protected abstract spawnNeurons(): BaseNeuron[];
+    protected spawnNeurons(): Neuron[] {
+        const neurons: Neuron[] = [];
+        for (let i = 0; i < this.outputSize; i++) {
+            const neuron = new Neuron(activationMap[this.activation], 
+                                      this.inputSize, 
+                                      this.outputSize);
+            neurons.push(neuron);
+        }
+        return neurons;
+    }
 
     public forward(inputs: number[]): number[] {
         return this.neurons.map(neuron => neuron.compute(inputs));
@@ -124,7 +144,7 @@ export abstract class BaseLayer {
 
     public freeze(): FrozenLayer {
         return {
-            activationFunction: this.activationFunction,
+            activation: this.activation,
             inputSize: this.inputSize,
             outputSize: this.outputSize,
             neurons: this.neurons.map(neuron => neuron.freeze())
@@ -133,10 +153,10 @@ export abstract class BaseLayer {
 }
 
 export class NeuralNetwork {
-    protected layers: BaseLayer[];
+    protected layers: Layer[];
     protected learningRate: number;
 
-    constructor(layers: BaseLayer[], learningRate: number) {
+    constructor(layers: Layer[], learningRate: number) {
         if (layers.length === 0) {
             throw new Error("Network must have at least one layer.");
         }

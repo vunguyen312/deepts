@@ -1,25 +1,26 @@
+import { Activation, ActivationFunc } from "./activations";
 interface FrozenNeuron {
     weights: number[];
     bias: number;
 }
-interface FrozenLayer {
-    activationFunction: string;
+export interface FrozenLayer {
+    activation: ActivationFunc;
     inputSize: number;
     outputSize: number;
     neurons: FrozenNeuron[];
 }
-interface FrozenNetwork {
+export interface FrozenNetwork {
     learningRate: number;
     layers: FrozenLayer[];
 }
-export declare abstract class BaseNeuron {
+export declare class Neuron {
+    private readonly activation;
     protected inputs: number[];
     protected weights: number[];
     protected bias: number;
     protected weightedSum: number;
-    constructor(inputSize: number, outputSize: number);
-    protected abstract activation(x: number): number;
-    protected abstract activationDerivative(x: number): number;
+    constructor(activation: Activation, weights: number[], bias: number);
+    constructor(activation: Activation, inputSize: number, outputSize: number);
     computeDelta(error: number): number;
     updateParams(learningRate: number, delta: number): void;
     compute(inputs: number[]): number;
@@ -28,23 +29,22 @@ export declare abstract class BaseNeuron {
     getWeightedSum(): number;
     freeze(): FrozenNeuron;
 }
-export declare abstract class BaseLayer {
-    protected readonly activationFunction: string;
+export declare class Layer {
+    private readonly activation;
     protected inputSize: number;
     protected outputSize: number;
-    protected neurons: BaseNeuron[];
-    constructor(inputSize: number, outputSize: number);
-    protected abstract getActivationFunction(): string;
-    protected abstract spawnNeurons(): BaseNeuron[];
+    protected neurons: Neuron[];
+    constructor(activation: ActivationFunc, inputSize: number, outputSize: number, neurons?: Neuron[]);
+    protected spawnNeurons(): Neuron[];
     forward(inputs: number[]): number[];
     backward(learningRate: number, errors: number[]): number[];
     private getLayerWeights;
     freeze(): FrozenLayer;
 }
 export declare class NeuralNetwork {
-    protected layers: BaseLayer[];
+    protected layers: Layer[];
     protected learningRate: number;
-    constructor(layers: BaseLayer[], learningRate: number);
+    constructor(layers: Layer[], learningRate: number);
     forwardPass(inputs: number[]): number[];
     train(inputData: number[], expectedOutput: number[]): void;
     freeze(): FrozenNetwork;

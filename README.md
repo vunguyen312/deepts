@@ -42,12 +42,12 @@ npm install
 Below is an example of a small 3-layer neural network trained to solve the XOR problem
 ```typescript
 import NetworkController from "./NetworkController";
-import SigmoidLayer from "./activations/sigmoid";
+import { Layer } from "./neuralNetwork";
 
 const network = NetworkController.createNetwork(
     [
-        new SigmoidLayer(2, 3), 
-        new SigmoidLayer(3, 1)
+        new Layer("sigmoid", 2, 3), 
+        new Layer("sigmoid", 3, 1)
     ], 
     0.1
 );
