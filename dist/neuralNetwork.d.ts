@@ -1,4 +1,4 @@
-import { Activation, ActivationFunc } from "./activations";
+import { Activation, ActivationFunc } from "./math/activations";
 interface FrozenNeuron {
     weights: number[];
     bias: number;

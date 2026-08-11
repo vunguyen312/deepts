@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NeuralNetwork = exports.Layer = exports.Neuron = void 0;
-const math_1 = require("./math");
-const activations_1 = require("./activations");
+const math_1 = require("./math/math");
+const activations_1 = require("./math/activations");
 class Neuron {
     activation;
     inputs;
@@ -118,6 +118,7 @@ class NeuralNetwork {
         }
         return valuePassed;
     }
+    // TODO: add batching
     train(inputData, expectedOutput) {
         const output = this.forwardPass(inputData);
         let errors = expectedOutput.map((target, i) => target - output[i]);

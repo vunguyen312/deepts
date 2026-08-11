@@ -62,7 +62,22 @@ for (let i = 0; i < 20000; i++) {
 console.log(network.forwardPass([1, 0]));
 console.log(network.forwardPass([0, 0]));
 console.log(network.forwardPass([1, 1]));
-NetworkController.freezeToJSON(network, "./src/models/weights.json");
+NetworkController.freezeToJSON(network, "./src/models/xor.json");
+```
+
+### Loading Networks
+Below is an example of a network being loaded from a frozen model JSON file
+```typescript
+import { readFileSync } from "fs";
+import NetworkController from "../NetworkController";
+
+const modelJSON = readFileSync("./src/models/xor.json", "utf-8");
+const modelData = JSON.parse(modelJSON);
+const network = NetworkController.loadNetwork(modelData);
+
+console.log(network.forwardPass([1, 0]));
+console.log(network.forwardPass([0, 0]));
+console.log(network.forwardPass([1, 1]));
 ```
 
 ## Contributing

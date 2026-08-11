@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const neuralNetwork_1 = require("./neuralNetwork");
 const fs_1 = require("fs");
-const activations_1 = require("./activations");
+const activations_1 = require("./math/activations");
 class NetworkController {
     static createNetwork(layers, learningRate) {
         return new neuralNetwork_1.NeuralNetwork(layers, learningRate);
@@ -10,6 +10,7 @@ class NetworkController {
     static async freezeToJSON(network, path) {
         const frozenNetwork = network.freeze();
         const jsonNetwork = JSON.stringify(frozenNetwork, null, 4);
+        console.log("Loading model...");
         await (0, fs_1.writeFile)(path, jsonNetwork, "utf8", err => {
             if (err) {
                 console.error("There was a problem saving weights to JSON!");
