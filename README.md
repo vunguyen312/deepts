@@ -1,3 +1,7 @@
+<p align="center">
+  <image src="assets/deepts.webp" width=256 alt="deep.ts Logo">
+<p>
+
 # deep.ts
 
 <p align="center">
