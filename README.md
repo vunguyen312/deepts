@@ -54,13 +54,24 @@ cd deepts
 npm install
 ```
 
+### 3. Download the MNIST Dataset
+The MNIST data is not committed to the repo (52 MB of binaries). Fetch it with:
+```bash
+npm run data
+# or: ./scripts/download-mnist.sh
+```
+Only needed for the MNIST example; the XOR example works without it.
+
 ## Examples
+
+Runnable versions of these examples live in `src/examples/` — run them with
+`npx tsx src/examples/xor.ts` or `npm run dev` (runs both).
 
 ### XOR Neural Network
 Below is an example of a small 3-layer neural network trained to solve the XOR problem
 ```typescript
-import NetworkController from "./NetworkController";
-import { Layer } from "./neuralNetwork";
+import NetworkController from "../core/NetworkController";
+import { Layer } from "../core/neuralNetwork";
 
 const network = NetworkController.createNetwork(
     [
@@ -80,11 +91,11 @@ for (let i = 0; i < 20000; i++) {
 console.log(network.forwardPass([1, 0]));
 console.log(network.forwardPass([0, 0]));
 console.log(network.forwardPass([1, 1]));
-NetworkController.freezeToJSON(network, "./src/models/xor.json");
+NetworkController.freezeToJSON(network, "./src/weights/xor.json");
 ```
 
 ### MNIST Neural Network
-Belown is an example of a network trained on the MNIST dataset
+Below is an example of a network trained on the MNIST dataset
 ```typescript
 import NetworkController from "../core/NetworkController";
 import { Layer } from "../core/neuralNetwork";
@@ -92,42 +103,46 @@ import MNISTParser from "../utils/MNISTParser";
 
 const network = NetworkController.createNetwork(
     [
-        new Layer('relu', 784, 30),
-        new Layer('sigmoid', 30, 10)
+        new Layer("relu", 784, 30),
+        new Layer("sigmoid", 30, 10)
     ],
     0.1
 );
 
-const trainingSet = new MNISTParser("src/data/train-images.idx3-ubyte", "src/data/train-labels.idx1-ubyte");
-const images = training.getImages();
-const labels = training.getLabels();
+const trainingSet = new MNISTParser(
+    "src/data/train-images.idx3-ubyte",
+    "src/data/train-labels.idx1-ubyte"
+);
+const trainingImages = trainingSet.getImages();
+const trainingLabels = trainingSet.getLabels();
 
 for (let i = 0; i < 30; i++) {
-    for (let j = 0; j < images.count; j++) {
+    for (let j = 0; j < trainingImages.count; j++) {
         const currImage = trainingSet.imageAt(j);
-        const currExpected = trainingSet.oneHot(labels[j]);
+        const currExpected = trainingSet.oneHot(trainingLabels[j]);
         network.train(currImage, currExpected);
     }
 }
 
-const testSet = new MNISTParser("src/data/t10k-images.idx3-ubyte", "src/data/t10k-labels.idx1-ubyte");
-const images = testSet.getImages();
-const labels = testSet.getLabels();
+const testSet = new MNISTParser(
+    "src/data/t10k-images.idx3-ubyte",
+    "src/data/t10k-labels.idx1-ubyte"
+);
 
 const test = network.forwardPass(testSet.imageAt(0));
-console.log('Network saw ' + testSet.argMax(test));
-console.log('Expected is ' + labels[0]);
+console.log("Network saw " + testSet.argMax(test));
+console.log("Expected is " + testSet.getLabels()[0]);
 
-NetworkController.freezeToJSON(network, './src/models/mnist.json');
+NetworkController.freezeToJSON(network, "./src/weights/mnist.json");
 ```
 
 ### Loading Networks
 Below is an example of a network being loaded from a frozen model JSON file
 ```typescript
 import { readFileSync } from "fs";
-import NetworkController from "../NetworkController";
+import NetworkController from "../core/NetworkController";
 
-const modelJSON = readFileSync("./src/models/xor.json", "utf-8");
+const modelJSON = readFileSync("./src/weights/xor.json", "utf-8");
 const modelData = JSON.parse(modelJSON);
 const network = NetworkController.loadNetwork(modelData);
 
