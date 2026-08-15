@@ -64,9 +64,6 @@ Only needed for the MNIST example; the XOR example works without it.
 
 ## Examples
 
-Runnable versions of these examples live in `src/examples/` — run them with
-`npx tsx src/examples/xor.ts` or `npm run dev` (runs both).
-
 ### XOR Neural Network
 Below is an example of a small 3-layer neural network trained to solve the XOR problem
 ```typescript
