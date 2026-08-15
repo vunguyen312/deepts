@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <b> A tiny deep learning library written in TypeScript.</b>
+  <b> A tiny deep learning framework written in TypeScript.</b>
 </p>
 
 ------------------------------------------------------------------------
@@ -31,7 +31,7 @@
 This is a small learning project built for understanding the fundamentals of deep learning.
 It provides a top-level overview of neural network construction.
 
-I know what you're thinking: What kind of nutjob would write a deep learning library from 
+I know what you're thinking: What kind of nutjob would write a deep learning framework from 
 scratch in TypeScript? Yes, I'm that sicko. This was quite a fun project so I regret nothing!
 
 This project is ideal for:
@@ -81,6 +81,44 @@ console.log(network.forwardPass([1, 0]));
 console.log(network.forwardPass([0, 0]));
 console.log(network.forwardPass([1, 1]));
 NetworkController.freezeToJSON(network, "./src/models/xor.json");
+```
+
+### MNIST Neural Network
+Belown is an example of a network trained on the MNIST dataset
+```typescript
+import NetworkController from "../core/NetworkController";
+import { Layer } from "../core/neuralNetwork";
+import MNISTParser from "../utils/MNISTParser";
+
+const network = NetworkController.createNetwork(
+    [
+        new Layer('relu', 784, 30),
+        new Layer('sigmoid', 30, 10)
+    ],
+    0.1
+);
+
+const trainingSet = new MNISTParser("src/data/train-images.idx3-ubyte", "src/data/train-labels.idx1-ubyte");
+const images = training.getImages();
+const labels = training.getLabels();
+
+for (let i = 0; i < 30; i++) {
+    for (let j = 0; j < images.count; j++) {
+        const currImage = trainingSet.imageAt(j);
+        const currExpected = trainingSet.oneHot(labels[j]);
+        network.train(currImage, currExpected);
+    }
+}
+
+const testSet = new MNISTParser("src/data/t10k-images.idx3-ubyte", "src/data/t10k-labels.idx1-ubyte");
+const images = testSet.getImages();
+const labels = testSet.getLabels();
+
+const test = network.forwardPass(testSet.imageAt(0));
+console.log('Network saw ' + testSet.argMax(test));
+console.log('Expected is ' + labels[0]);
+
+NetworkController.freezeToJSON(network, './src/models/mnist.json');
 ```
 
 ### Loading Networks

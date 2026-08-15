@@ -97,7 +97,7 @@ export default class MNISTParser {
 
     public argMax(vec: number[]): number {
         let highest = 0;
-        for (let i = 0; i < vec.length - 1; i++) {
+        for (let i = 0; i < vec.length; i++) {
             if (vec[i] > vec[highest]) {
                 highest = i;
             }
