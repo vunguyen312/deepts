@@ -22,19 +22,19 @@ export interface FrozenNetwork {
 
 export class Neuron {
     private readonly activation: Activation;
-    protected inputs: number[];
-    protected weights: number[];
+    protected inputs: Float32Array;
+    protected weights: Float32Array;
     protected bias: number;
     protected weightedSum: number;
 
-    constructor(activation: Activation, weights: number[], bias: number);
+    constructor(activation: Activation, weights: Float32Array, bias: number);
 
     constructor(activation: Activation, inputSize: number, outputSize: number);
 
     constructor(activation: Activation, 
-                arg1: number | number[], arg2: number) {
+                arg1: number | Float32Array, arg2: number) {
         this.activation = activation;
-        this.inputs = [];
+        this.inputs = new Float32Array();
         this.weightedSum = 0;
 
         if (typeof arg1 === 'number') {
@@ -56,14 +56,14 @@ export class Neuron {
         this.bias += learningRate * delta;
     }
 
-    public compute(inputs: number[]): number {
+    public compute(inputs: Float32Array): number {
         this.inputs = inputs;
         this.weightedSum = Vector.dot(inputs, this.weights) + this.bias;
         const activationValue = this.activation.fn(this.weightedSum);
         return activationValue;
     }
 
-    public getWeights(): number[] {
+    public getWeights(): Float32Array {
         return this.weights;
     }
 
@@ -77,7 +77,7 @@ export class Neuron {
 
     public freeze(): FrozenNeuron {
         return {
-            weights: this.weights,
+            weights: Array.from(this.weights),
             bias: this.bias
         };
     }
@@ -116,17 +116,23 @@ export class Layer {
         return neurons;
     }
 
-    public forward(inputs: number[]): number[] {
-        return this.neurons.map(neuron => neuron.compute(inputs));
+    public forward(inputs: Float32Array): Float32Array {
+        const result: number[] = [];
+        for (const neuron of this.neurons) {
+            const computeNeuron = neuron.compute(inputs);
+            result.push(computeNeuron);
+        }
+        return new Float32Array(result);
     }
 
-    public backward(learningRate: number, errors: number[]): number[] {
+    public backward(learningRate: number, errors: Float32Array): Float32Array {
         const deltas = this.neurons.map((neuron, i) => 
             neuron.computeDelta(errors[i])
         );
+        const deltaFloat = [new Float32Array(deltas)];
 
         const weights = this.getLayerWeights();
-        const prevErrorsMat = Matrix.mul(weights, [deltas]);
+        const prevErrorsMat = Matrix.mul(weights, deltaFloat);
         const prevErrors = prevErrorsMat[0];
 
         this.neurons.map((neuron, i) => 
@@ -136,7 +142,7 @@ export class Layer {
         return prevErrors;
     }
 
-    private getLayerWeights(): number[][] {
+    private getLayerWeights(): Float32Array[] {
         return this.neurons.map(neuron => 
             neuron.getWeights()
         );
@@ -165,8 +171,8 @@ export class NeuralNetwork {
         this.learningRate = learningRate;
     }
 
-    public forwardPass(inputs: number[]): number[] {
-        let valuePassed = [...inputs];
+    public forwardPass(inputs: Float32Array): Float32Array {
+        let valuePassed: Float32Array = new Float32Array(inputs);
 
         for (const layer of this.layers) {
             valuePassed = layer.forward(valuePassed);
@@ -176,10 +182,12 @@ export class NeuralNetwork {
     }
 
     // TODO: add batching
-    public train(inputData: number[], expectedOutput: number[]): void {
+    public train(inputData: Float32Array, expectedOutput: Float32Array): void {
         const output = this.forwardPass(inputData);
 
-        let errors = expectedOutput.map((target, i) => target - output[i]);
+        let errors: Float32Array = expectedOutput.map(
+            (target, i) => target - output[i]
+        );
         for (let i = this.layers.length - 1; i >= 0; i--) {
             errors = this.layers[i].backward(this.learningRate, errors);
         }

@@ -82,20 +82,20 @@ export default class MNISTParser {
         return labels;
     }
 
-    public imageAt(i: number): number[] {
+    public imageAt(i: number): Float32Array {
         const size = this.idxImages.rows * this.idxImages.cols;
         const slice = this.idxImages.data.subarray(i * size, (i + 1) * size);
-        return Array.from(slice, v => v / 255);
+        return Float32Array.from(slice, v => v / 255);
     }
 
-    public oneHot(label: number): number[] {
+    public oneHot(label: number): Float32Array {
         const NUM_DIGITS = 10;
-        const expectedVec: number[] = new Array(NUM_DIGITS).fill(0);
+        const expectedVec: Float32Array = new Float32Array(NUM_DIGITS).fill(0);
         expectedVec[label] = 1;
         return expectedVec;
     }
 
-    public argMax(vec: number[]): number {
+    public argMax(vec: Float32Array): number {
         let highest = 0;
         for (let i = 0; i < vec.length; i++) {
             if (vec[i] > vec[highest]) {

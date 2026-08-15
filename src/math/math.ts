@@ -1,16 +1,16 @@
 // Waterloo MATH136 trauma #thosewhoknow
 
 export class Vector {
-    public static randomVector(fanIn: number, fanOut: number): number[] {
+    public static randomVector(fanIn: number, fanOut: number): Float32Array {
         const a = Math.sqrt(6 / (fanIn + fanOut));
         const result: number[] = [];
         for (let i = 0; i < fanIn; i++) {
             result.push(Math.random() * 2 * a - a);
         }
-        return result;
+        return new Float32Array(result);
     }
 
-    public static dot(vec1: number[], vec2: number[]): number {
+    public static dot(vec1: Float32Array, vec2: Float32Array): number {
         if (vec1.length !== vec2.length) {
             throw new Error('Vectors are not of the same length');
         }
@@ -23,8 +23,8 @@ export class Vector {
         return sum;
     }
 
-    public static scalarMul(scalar: number, vec: number[]): number[] {
-        const result = [...vec];
+    public static scalarMul(scalar: number, vec: Float32Array): Float32Array {
+        const result = new Float32Array(vec);
         for (let i = 0; i < vec.length; i++) {
             result[i] *= scalar;
         }
@@ -32,12 +32,12 @@ export class Vector {
         return result;
     }
 
-    public static add(vec1: number[], vec2: number[]): number[] {
+    public static add(vec1: Float32Array, vec2: Float32Array): Float32Array {
         if (vec1.length !== vec2.length) {
             throw new Error('Vectors are not of the same length');
         }
 
-        const result = [...vec1];
+        const result = new Float32Array(vec1);
         for (let i = 0; i < vec1.length; i++) {
             result[i] += vec2[i];
         }
@@ -47,17 +47,17 @@ export class Vector {
 }
 
 export class Matrix {
-    public static zeroMat(rowLength: number, colLength: number): number[][] {
-        const result: number[][] = [];
+    public static zeroMat(rowLength: number, colLength: number): Float32Array[] {
+        const result: Float32Array[] = [];
         for (let i = 0; i < rowLength; i++) {
-            const col = new Array(colLength).fill(0);
+            const col = new Float32Array(colLength);
             result.push(col);
         }
 
         return result;
     }
 
-    public static mul(mat1: number[][], mat2: number[][]): number[][] {
+    public static mul(mat1: Float32Array[], mat2: Float32Array[]): Float32Array[] {
         const rowLength = mat2.length;
         const colLength = mat1[0].length;
         const result = Matrix.zeroMat(rowLength, colLength);
@@ -72,12 +72,12 @@ export class Matrix {
         return result;
     }
 
-    public static getRow(mat: number[][], j: number): number[] {
+    public static getRow(mat: Float32Array[], j: number): Float32Array {
         const result: number[] = [];
         for (let i = 0; i < mat.length; i++) {
             result.push(mat[i][j]);
         }
 
-        return result;
+        return new Float32Array(result);
     }
 }

@@ -26,7 +26,8 @@ export default class NetworkController {
         const neurons: Neuron[] = [];
         for (const neuron of layer.neurons) {
             const newNeuron = new Neuron(activationMap[layer.activation],
-                                         neuron.weights, neuron.bias);
+                                         new Float32Array(neuron.weights), 
+                                         neuron.bias);
             neurons.push(newNeuron);
         }
 
