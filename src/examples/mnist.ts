@@ -22,7 +22,7 @@ const averageNetworkAccuracy = () => {
     for (let i = 0; i < images.count; i++) {
         const currImage = testSet.imageAt(i);
         const expectedResult = labels[i];
-        const result = network.forwardPass(currImage);
+        const result = network.forward(currImage);
         const intResult = testSet.argMax(result);
         if (intResult === expectedResult) {
             correct++;

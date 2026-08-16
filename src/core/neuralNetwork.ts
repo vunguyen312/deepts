@@ -7,8 +7,6 @@ interface FrozenNeuron {
 }
 
 export interface FrozenLayer {
-    // Keep to layer level for now. I don't think libs like PyTorch allow
-    // for control of activation funcs at the neuron level (?)
     activation: ActivationFunc;
     inputSize: number;
     outputSize: number;
@@ -16,16 +14,17 @@ export interface FrozenLayer {
 }
 
 export interface FrozenNetwork {
-    learningRate: number;
     layers: FrozenLayer[];
 }
 
 export class Neuron {
     private readonly activation: Activation;
-    protected inputs: Float32Array;
-    protected weights: Float32Array;
-    protected bias: number;
-    protected weightedSum: number;
+    private inputs: Float32Array;
+    private gradWeights: Float32Array;
+    private gradBias: number;
+    private weights: Float32Array;
+    private bias: number;
+    private weightedSum: number;
 
     constructor(activation: Activation, weights: Float32Array, bias: number);
 
@@ -36,12 +35,15 @@ export class Neuron {
         this.activation = activation;
         this.inputs = new Float32Array();
         this.weightedSum = 0;
+        this.gradBias = 0;
 
         if (typeof arg1 === 'number') {
+            this.gradWeights = new Float32Array(arg1);
             this.weights = Vector.randomVector(arg1, arg2);
             this.bias = Math.random();
             return;
         }
+        this.gradWeights = new Float32Array(arg1.length);
         this.weights = arg1;
         this.bias = arg2;
     }
@@ -50,10 +52,23 @@ export class Neuron {
         return error * this.activation.derivative(this.weightedSum);
     }
 
-    public updateParams(learningRate: number, delta: number): void {
-        const updateStep = Vector.scalarMul(learningRate * delta, this.inputs);
+    public acculumateGrad(delta: number): void {
+        const gradient = Vector.scalarMul(delta, this.inputs);
+        this.gradWeights = Vector.add(this.gradWeights, gradient);
+        this.gradBias += delta;
+    }
+
+    public step(learningRate: number): void {
+        const updateStep = Vector.scalarMul(learningRate, this.gradWeights);
         this.weights = Vector.add(this.weights, updateStep);
-        this.bias += learningRate * delta;
+        this.bias += learningRate * this.gradBias;
+    }
+
+    public zeroGrad(): void {
+        for (let i = 0; i < this.gradWeights.length; i++) {
+            this.gradWeights[i] = 0;
+        }
+        this.gradBias = 0;
     }
 
     public compute(inputs: Float32Array): number {
@@ -85,9 +100,9 @@ export class Neuron {
 
 export class Layer {
     private readonly activation: ActivationFunc;
-    protected inputSize: number;
-    protected outputSize: number;
-    protected neurons: Neuron[];
+    private inputSize: number;
+    private outputSize: number;
+    private neurons: Neuron[];
 
     constructor(activation: ActivationFunc, inputSize: number, outputSize: number, 
                 neurons?: Neuron[]) {
@@ -105,7 +120,7 @@ export class Layer {
         this.neurons = neurons || this.spawnNeurons();
     }
 
-    protected spawnNeurons(): Neuron[] {
+    private spawnNeurons(): Neuron[] {
         const neurons: Neuron[] = [];
         for (let i = 0; i < this.outputSize; i++) {
             const neuron = new Neuron(activationMap[this.activation], 
@@ -125,7 +140,7 @@ export class Layer {
         return new Float32Array(result);
     }
 
-    public backward(learningRate: number, errors: Float32Array): Float32Array {
+    public backward(errors: Float32Array): Float32Array {
         const deltas = this.neurons.map((neuron, i) => 
             neuron.computeDelta(errors[i])
         );
@@ -136,7 +151,7 @@ export class Layer {
         const prevErrors = prevErrorsMat[0];
 
         this.neurons.map((neuron, i) => 
-            neuron.updateParams(learningRate, deltas[i])
+            neuron.acculumateGrad(deltas[i])
         );
 
         return prevErrors;
@@ -146,6 +161,10 @@ export class Layer {
         return this.neurons.map(neuron => 
             neuron.getWeights()
         );
+    }
+
+    public getNeurons(): Neuron[] {
+        return this.neurons;
     }
 
     public freeze(): FrozenLayer {
@@ -159,19 +178,17 @@ export class Layer {
 }
 
 export class NeuralNetwork {
-    protected layers: Layer[];
-    protected learningRate: number;
+    private layers: Layer[];
 
-    constructor(layers: Layer[], learningRate: number) {
+    constructor(layers: Layer[]) {
         if (layers.length === 0) {
             throw new Error("Network must have at least one layer.");
         }
 
         this.layers = [...layers];
-        this.learningRate = learningRate;
     }
 
-    public forwardPass(inputs: Float32Array): Float32Array {
+    public forward(inputs: Float32Array): Float32Array {
         let valuePassed: Float32Array = new Float32Array(inputs);
 
         for (const layer of this.layers) {
@@ -181,21 +198,31 @@ export class NeuralNetwork {
         return valuePassed;
     }
 
-    // TODO: add batching
-    public train(inputData: Float32Array, expectedOutput: Float32Array): void {
-        const output = this.forwardPass(inputData);
+    public backward(inputData: Float32Array, expectedOutput: Float32Array): void {
+        const output = this.forward(inputData);
 
         let errors: Float32Array = expectedOutput.map(
             (target, i) => target - output[i]
         );
         for (let i = this.layers.length - 1; i >= 0; i--) {
-            errors = this.layers[i].backward(this.learningRate, errors);
+            errors = this.layers[i].backward(errors);
         }
+    }
+
+    public getNeurons(): Neuron[] {
+        const result: Neuron[] = [];
+        for (const layer of this.layers) {
+            const layerNeurons = layer.getNeurons();
+            for (const neuron of layerNeurons) {
+                result.push(neuron);
+            }
+        }
+
+        return result;
     }
 
     public freeze(): FrozenNetwork {
         return {
-            learningRate: this.learningRate,
             layers: this.layers.map(layer => layer.freeze())
         };
     }

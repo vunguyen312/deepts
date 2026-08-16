@@ -3,9 +3,8 @@ import { writeFile } from "fs";
 import { activationMap } from "../math/activations";
 
 export default class NetworkController {
-    public static createNetwork(layers: Layer[], 
-                                learningRate: number): NeuralNetwork {
-        return new NeuralNetwork(layers, learningRate);
+    public static createNetwork(layers: Layer[]): NeuralNetwork {
+        return new NeuralNetwork(layers);
     }
 
     public static async freezeToJSON(network: NeuralNetwork, 
@@ -43,6 +42,6 @@ export default class NetworkController {
             layers.push(newLayer);
         }
 
-        return new NeuralNetwork(layers, frozenNetwork.learningRate);
+        return new NeuralNetwork(layers);
     }
 }
