@@ -1,22 +1,14 @@
 #!/usr/bin/env bash
 #
-# Downloads the MNIST dataset into src/data/.
-#
-# Sources: the ossci-datasets S3 mirror.
-#
-# Usage:
-#   ./scripts/download-mnist.sh          # download anything missing
-#   ./scripts/download-mnist.sh --force  # re-download everything
+# Downloads the MNIST dataset into src/data/, and mirrors it into dist/data/
+# when a build exists. Usage: ./scripts/download-mnist.sh [--force]
 
 set -euo pipefail
 
-BASE_URLS=(
-  "https://ossci-datasets.s3.amazonaws.com/mnist"
-)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEST_DIR="$(dirname "$SCRIPT_DIR")/src/data"
+BASE_URL="https://ossci-datasets.s3.amazonaws.com/mnist"
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DEST_DIR="$REPO_DIR/src/data"
 
-# gz name -> decompressed name (as expected by the examples)
 FILES=(
   "train-images-idx3-ubyte.gz:train-images.idx3-ubyte"
   "train-labels-idx1-ubyte.gz:train-labels.idx1-ubyte"
@@ -39,25 +31,19 @@ for entry in "${FILES[@]}"; do
   fi
 
   tmp="$(mktemp "$DEST_DIR/.mnist.XXXXXX")"
-  fetched=0
-  for base in "${BASE_URLS[@]}"; do
-    echo "fetch $base/$gz"
-    if curl -fsSL --max-time 120 "$base/$gz" -o "$tmp"; then
-      fetched=1
-      break
-    fi
-    echo "  failed, trying next source..."
-  done
-
-  if [[ $fetched -eq 0 ]]; then
+  curl -fsSL --max-time 120 "$BASE_URL/$gz" -o "$tmp" || {
     rm -f "$tmp"
-    echo "error: could not download $gz from any source" >&2
+    echo "error: could not download $gz" >&2
     exit 1
-  fi
-
+  }
   gunzip -c "$tmp" > "$DEST_DIR/$out"
   rm -f "$tmp"
   echo "write $out"
 done
 
-echo "Done. MNIST data is ready in src/data/"
+if [[ -d "$REPO_DIR/dist" ]]; then
+  mkdir -p "$REPO_DIR/dist/data"
+  cp "$DEST_DIR"/*.idx[13]-ubyte "$REPO_DIR/dist/data/"
+fi
+
+echo "Done. MNIST data is ready in src/data/ (mirrored to dist/data/ if dist exists)"

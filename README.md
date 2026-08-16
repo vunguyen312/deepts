@@ -119,7 +119,7 @@ const network = NetworkController.createNetwork(
         new Layer("sigmoid", 30, 10)
     ]
 );
-const optimizer = new SGDOptimizer(network.getNeurons(), 0.1);
+const optimizer = new SGDOptimizer(network.getNeurons(), 0.00625);
 
 const trainingSet = new MNISTParser(
     join(__dirname, "../data/train-images.idx3-ubyte"),

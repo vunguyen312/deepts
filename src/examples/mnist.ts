@@ -12,8 +12,7 @@ const testSet = new MNISTParser(
 const images = testSet.getImages();
 const labels = testSet.getLabels();
 
-const modelPath = join(__dirname, "../weights/mnist.json");
-const modelJSON = readFileSync(modelPath, "utf-8");
+const modelJSON = readFileSync("src/weights/mnist.json", "utf-8");
 const modelData = JSON.parse(modelJSON);
 const network = NetworkController.loadNetwork(modelData);
 
@@ -34,5 +33,5 @@ const averageNetworkAccuracy = () => {
 
 console.log("-----------------------------------------");
 console.log("MNIST Neural Network");
-console.log(`Network Accuracy: ${averageNetworkAccuracy()}%`);
+console.log(`Network Accuracy: ${averageNetworkAccuracy().toFixed(2)}%`);
 console.log("-----------------------------------------");

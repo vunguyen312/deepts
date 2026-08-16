@@ -1,6 +1,5 @@
 import { Neuron, Layer, NeuralNetwork, FrozenLayer, FrozenNetwork } from "./neuralNetwork";
 import { writeFile } from "fs/promises";
-import { activationMap } from "../math/activations";
 
 export default class NetworkController {
     public static createNetwork(layers: Layer[]): NeuralNetwork {
@@ -11,8 +10,11 @@ export default class NetworkController {
                                      path: string): Promise<void> {
         const frozenNetwork = network.freeze();
         const jsonNetwork = JSON.stringify(frozenNetwork, null, 4);
-
-        await writeFile(path, jsonNetwork, "utf8");
+        try {
+            await writeFile(path, jsonNetwork);
+        } catch (error) {
+            console.error("Error saving weights");
+        }
     }
 
     private static loadNeurons(layer: FrozenLayer): Neuron[] {

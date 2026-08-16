@@ -1,9 +1,7 @@
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import NetworkController from "../core/NetworkController";
 
-const modelPath = join(__dirname, "../weights/xor.json");
-const modelJSON = readFileSync(modelPath, "utf-8");
+const modelJSON = readFileSync("src/weights/xor.json", "utf-8");
 const modelData = JSON.parse(modelJSON);
 const network = NetworkController.loadNetwork(modelData);
 
