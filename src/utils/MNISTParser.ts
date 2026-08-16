@@ -90,7 +90,7 @@ export default class MNISTParser {
 
     public oneHot(label: number): Float32Array {
         const NUM_DIGITS = 10;
-        const expectedVec: Float32Array = new Float32Array(NUM_DIGITS).fill(0);
+        const expectedVec = new Float32Array(NUM_DIGITS);
         expectedVec[label] = 1;
         return expectedVec;
     }

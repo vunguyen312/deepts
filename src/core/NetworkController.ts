@@ -1,5 +1,5 @@
 import { Neuron, Layer, NeuralNetwork, FrozenLayer, FrozenNetwork } from "./neuralNetwork";
-import { writeFile } from "fs";
+import { writeFile } from "fs/promises";
 import { activationMap } from "../math/activations";
 
 export default class NetworkController {
@@ -12,20 +12,13 @@ export default class NetworkController {
         const frozenNetwork = network.freeze();
         const jsonNetwork = JSON.stringify(frozenNetwork, null, 4);
 
-        console.log("Loading model...");
-        await writeFile(path, jsonNetwork, "utf8", err => {
-            if (err) {
-                console.error("There was a problem saving weights to JSON!");
-                return;
-            }
-        });
+        await writeFile(path, jsonNetwork, "utf8");
     }
 
     private static loadNeurons(layer: FrozenLayer): Neuron[] {
         const neurons: Neuron[] = [];
         for (const neuron of layer.neurons) {
-            const newNeuron = new Neuron(activationMap[layer.activation],
-                                         new Float32Array(neuron.weights), 
+            const newNeuron = new Neuron(new Float32Array(neuron.weights), 
                                          neuron.bias);
             neurons.push(newNeuron);
         }

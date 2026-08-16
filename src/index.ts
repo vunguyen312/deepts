@@ -1,3 +1,3 @@
 // Can delete. Just loading in examples
-import "./examples/xor";
-import "./examples/mnist";
+// import "./examples/xor";
+// import "./examples/mnist";

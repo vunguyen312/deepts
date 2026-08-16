@@ -23,26 +23,34 @@ export class Vector {
         return sum;
     }
 
-    public static scalarMul(scalar: number, vec: Float32Array): Float32Array {
-        const result = new Float32Array(vec);
+    public static scale(scalar: number, vec: Float32Array): Float32Array {
         for (let i = 0; i < vec.length; i++) {
-            result[i] *= scalar;
+            vec[i] *= scalar;
         }
 
-        return result;
+        return vec;
     }
 
-    public static add(vec1: Float32Array, vec2: Float32Array): Float32Array {
+    public static addTo(vec1: Float32Array, vec2: Float32Array): Float32Array {
         if (vec1.length !== vec2.length) {
             throw new Error('Vectors are not of the same length');
         }
 
-        const result = new Float32Array(vec1);
         for (let i = 0; i < vec1.length; i++) {
-            result[i] += vec2[i];
+            vec1[i] += vec2[i];
         }
 
-        return result;
+        return vec1;
+    }
+
+    public static scalarMul(scalar: number, vec: Float32Array): Float32Array {
+        const result = new Float32Array(vec);
+        return this.scale(scalar, result);
+    }
+
+    public static add(vec1: Float32Array, vec2: Float32Array): Float32Array {
+        const result = new Float32Array(vec1);
+        return this.addTo(result, vec2);
     }
 }
 
@@ -73,11 +81,11 @@ export class Matrix {
     }
 
     public static getRow(mat: Float32Array[], j: number): Float32Array {
-        const result: number[] = [];
+        const result = new Float32Array(mat.length);
         for (let i = 0; i < mat.length; i++) {
-            result.push(mat[i][j]);
+            result[i] = (mat[i][j]);
         }
 
-        return new Float32Array(result);
+        return result;
     }
 }

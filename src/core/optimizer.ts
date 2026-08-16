@@ -1,21 +1,35 @@
-import { Neuron } from "./neuralNetwork";
+import { Parameters } from "./neuralNetwork";
 
 export abstract class Optimizer {
-    protected readonly neurons: Neuron[];
+    protected readonly networkParams: Parameters[];
     protected learningRate: number;
 
-    constructor(neurons: Neuron[], learningRate: number) {
-        this.neurons = neurons;
+    constructor(networkParams: Parameters[], learningRate: number) {
+        this.networkParams = networkParams;
         this.learningRate = learningRate;
+    }
+
+    private zeroGradParams(params: Parameters): void {
+        for (let i = 0; i < params.gradWeights.length; i++) {
+            params.gradWeights[i] = 0;
+        }
+        params.gradBias = 0;
+    }
+
+    public zeroGrad(): void {
+        this.networkParams.forEach(params => this.zeroGradParams(params));
     }
 }
 
 export class SGDOptimizer extends Optimizer {
-    public step(): void {
-        this.neurons.map(neuron => neuron.step(this.learningRate));
+    private stepParams(params: Parameters): void {
+        for (let i = 0; i < params.weights.length; i++) {
+            params.weights[i] += this.learningRate * params.gradWeights[i];
+        }
+        params.bias += this.learningRate * params.gradBias;
     }
 
-    public zeroGrad(): void {
-        this.neurons.map(neuron => neuron.zeroGrad());
+    public step(): void {
+        this.networkParams.forEach(params => this.stepParams(params));
     }
 }

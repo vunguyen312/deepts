@@ -17,95 +17,85 @@ export interface FrozenNetwork {
     layers: FrozenLayer[];
 }
 
+export interface Parameters {
+    gradWeights: Float32Array;
+    gradBias: number;
+    weights: Float32Array;
+    bias: number;
+}
+
+// TODO: replace with tensor because the object overhead blows up past a 
+//       certain network size
 export class Neuron {
-    private readonly activation: Activation;
     private inputs: Float32Array;
-    private gradWeights: Float32Array;
-    private gradBias: number;
-    private weights: Float32Array;
-    private bias: number;
+    private params!: Parameters;
     private weightedSum: number;
 
-    constructor(activation: Activation, weights: Float32Array, bias: number);
+    constructor(weights: Float32Array, bias: number);
 
-    constructor(activation: Activation, inputSize: number, outputSize: number);
+    constructor(inputSize: number, outputSize: number);
 
-    constructor(activation: Activation, 
-                arg1: number | Float32Array, arg2: number) {
-        this.activation = activation;
+    constructor(arg1: number | Float32Array, arg2: number) {
         this.inputs = new Float32Array();
         this.weightedSum = 0;
-        this.gradBias = 0;
 
         if (typeof arg1 === 'number') {
-            this.gradWeights = new Float32Array(arg1);
-            this.weights = Vector.randomVector(arg1, arg2);
-            this.bias = Math.random();
+            this.params = {
+                gradWeights: new Float32Array(arg1),
+                gradBias: 0,
+                weights: Vector.randomVector(arg1, arg2),
+                bias: Math.random()
+            };
             return;
         }
-        this.gradWeights = new Float32Array(arg1.length);
-        this.weights = arg1;
-        this.bias = arg2;
+        this.params = {
+            gradWeights: new Float32Array(arg1.length),
+            gradBias: 0,
+            weights: arg1,
+            bias: arg2
+        };
     }
 
-    public computeDelta(error: number): number {
-        return error * this.activation.derivative(this.weightedSum);
+    public getInputs(): Float32Array {
+        return this.inputs;
     }
 
-    public acculumateGrad(delta: number): void {
-        const gradient = Vector.scalarMul(delta, this.inputs);
-        this.gradWeights = Vector.add(this.gradWeights, gradient);
-        this.gradBias += delta;
-    }
-
-    public step(learningRate: number): void {
-        const updateStep = Vector.scalarMul(learningRate, this.gradWeights);
-        this.weights = Vector.add(this.weights, updateStep);
-        this.bias += learningRate * this.gradBias;
-    }
-
-    public zeroGrad(): void {
-        for (let i = 0; i < this.gradWeights.length; i++) {
-            this.gradWeights[i] = 0;
-        }
-        this.gradBias = 0;
-    }
-
-    public compute(inputs: Float32Array): number {
-        this.inputs = inputs;
-        this.weightedSum = Vector.dot(inputs, this.weights) + this.bias;
-        const activationValue = this.activation.fn(this.weightedSum);
-        return activationValue;
+    public getParams(): Parameters {
+        return this.params;
     }
 
     public getWeights(): Float32Array {
-        return this.weights;
-    }
-
-    public getBias(): number {
-        return this.bias;
+        return this.params.weights;
     }
 
     public getWeightedSum(): number {
         return this.weightedSum;
     }
 
+    public setInputs(inputs: Float32Array): void {
+        this.inputs = inputs;
+    }
+
+    public setWeightedSum(weightedSum: number): void {
+        this.weightedSum = weightedSum;
+    }
+
     public freeze(): FrozenNeuron {
         return {
-            weights: Array.from(this.weights),
-            bias: this.bias
+            weights: Array.from(this.params.weights),
+            bias: this.params.bias
         };
     }
 }
 
 export class Layer {
-    private readonly activation: ActivationFunc;
+    private readonly activation: Activation;
     private inputSize: number;
     private outputSize: number;
     private neurons: Neuron[];
 
-    constructor(activation: ActivationFunc, inputSize: number, outputSize: number, 
-                neurons?: Neuron[]) {
+    constructor(activation: ActivationFunc, inputSize: number, 
+                outputSize: number, neurons?: Neuron[]) {
         if (inputSize <= 0) {
             throw new Error("Layer must have one or more inputs.");
         }
@@ -114,7 +104,7 @@ export class Layer {
             throw new Error("Layer must have one or more outputs");
         }
 
-        this.activation = activation;
+        this.activation = activationMap[activation];
         this.inputSize = inputSize;
         this.outputSize = outputSize;
         this.neurons = neurons || this.spawnNeurons();
@@ -123,26 +113,52 @@ export class Layer {
     private spawnNeurons(): Neuron[] {
         const neurons: Neuron[] = [];
         for (let i = 0; i < this.outputSize; i++) {
-            const neuron = new Neuron(activationMap[this.activation], 
-                                      this.inputSize, 
-                                      this.outputSize);
+            const neuron = new Neuron(this.inputSize, this.outputSize);
             neurons.push(neuron);
         }
+        
         return neurons;
     }
 
-    public forward(inputs: Float32Array): Float32Array {
-        const result: number[] = [];
-        for (const neuron of this.neurons) {
-            const computeNeuron = neuron.compute(inputs);
-            result.push(computeNeuron);
+    private computeDelta(error: number, i: number): number {
+        const weightedSum = this.neurons[i].getWeightedSum();
+        return error * this.activation.derivative(weightedSum);
+    }
+
+    private compute(inputs: Float32Array, i: number): number {
+        const neuron = this.neurons[i];
+        const params = neuron.getParams();
+        neuron.setInputs(inputs);
+        const computedResult = Vector.dot(inputs, params.weights) 
+            + params.bias;
+        neuron.setWeightedSum(computedResult);
+        const activationValue = this.activation.fn(computedResult);
+        return activationValue;
+    }
+
+    private acculumatedGrad(delta: number, i: number): void {
+        const neuron = this.neurons[i];
+        const params = neuron.getParams();
+        const inputs = neuron.getInputs();
+        for (let j = 0; j < params.gradWeights.length; j++) {
+            params.gradWeights[j] += delta * inputs[j];
         }
-        return new Float32Array(result);
+        params.gradBias += delta;
+    }
+
+    public forward(inputs: Float32Array): Float32Array {
+        const result = new Float32Array(this.neurons.length);
+        for (let i = 0; i < this.neurons.length; i++) {
+            const computeResult = this.compute(inputs, i);
+            result[i] = computeResult;
+        }
+
+        return result;
     }
 
     public backward(errors: Float32Array): Float32Array {
         const deltas = this.neurons.map((neuron, i) => 
-            neuron.computeDelta(errors[i])
+            this.computeDelta(errors[i], i)
         );
         const deltaFloat = [new Float32Array(deltas)];
 
@@ -150,8 +166,8 @@ export class Layer {
         const prevErrorsMat = Matrix.mul(weights, deltaFloat);
         const prevErrors = prevErrorsMat[0];
 
-        this.neurons.map((neuron, i) => 
-            neuron.acculumateGrad(deltas[i])
+        this.neurons.forEach((neuron, i) => 
+            this.acculumatedGrad(deltas[i], i)
         );
 
         return prevErrors;
@@ -169,7 +185,7 @@ export class Layer {
 
     public freeze(): FrozenLayer {
         return {
-            activation: this.activation,
+            activation: this.activation.id,
             inputSize: this.inputSize,
             outputSize: this.outputSize,
             neurons: this.neurons.map(neuron => neuron.freeze())
@@ -209,12 +225,13 @@ export class NeuralNetwork {
         }
     }
 
-    public getNeurons(): Neuron[] {
-        const result: Neuron[] = [];
+    public getParams(): Parameters[] {
+        const result: Parameters[] = [];
         for (const layer of this.layers) {
             const layerNeurons = layer.getNeurons();
             for (const neuron of layerNeurons) {
-                result.push(neuron);
+                const params = neuron.getParams();
+                result.push(params);
             }
         }
 
