@@ -68,13 +68,13 @@ Only needed for the MNIST example; the XOR example works without it.
 Below is an example of a small 3-layer neural network trained to solve the XOR problem
 ```typescript
 import { join } from "node:path";
-import NetworkController from "../core/NetworkController";
+import { createNetwork, freezeToJSON } from "../core/networkController";
 import { Layer } from "../core/neuralNetwork";
 import { SGDOptimizer } from "../core/optimizer";
 
 const NUM_EPOCHS = 20000;
 
-const network = NetworkController.createNetwork(
+const network = createNetwork(
     [
         new Layer("sigmoid", 2, 3), 
         new Layer("sigmoid", 3, 1)
@@ -98,14 +98,14 @@ for (let epoch = 0; epoch < NUM_EPOCHS; epoch++) {
     optimizer.step();
 }
 
-NetworkController.freezeToJSON(network, join(__dirname, "../weights/xor.json"));
+freezeToJSON(network, join(__dirname, "../weights/xor.json"));
 ```
 
 ### MNIST Neural Network
 Below is an example of a network trained on the MNIST dataset
 ```typescript
 import { join } from "node:path";
-import NetworkController from "../core/NetworkController";
+import { createNetwork, freezeToJSON } from "../core/networkController";
 import { Layer } from "../core/neuralNetwork";
 import { SGDOptimizer } from "../core/optimizer";
 import MNISTParser from "../utils/MNISTParser";
@@ -113,7 +113,7 @@ import MNISTParser from "../utils/MNISTParser";
 const BATCH_SIZE = 64;
 const NUM_EPOCHS = 30;
 
-const network = NetworkController.createNetwork(
+const network = createNetwork(
     [
         new Layer("relu", 784, 30),
         new Layer("sigmoid", 30, 10)
@@ -143,7 +143,7 @@ for (let epoch = 0; epoch < NUM_EPOCHS; epoch++) {
     }
 }
 
-NetworkController.freezeToJSON(network, join(__dirname, "../weights/mnist.json"));
+freezeToJSON(network, join(__dirname, "../weights/mnist.json"));
 ```
 
 ### Loading Networks
@@ -151,12 +151,12 @@ Below is an example of a network being loaded from a frozen model JSON file
 ```typescript
 import { readFileSync } from "fs";
 import { join } from "node:path";
-import NetworkController from "../core/NetworkController";
+import { loadNetwork } from "../core/networkController";
 
 const modelPath = join(__dirname, "../weights/xor.json");
 const modelJSON = readFileSync(modelPath, "utf-8");
 const modelData = JSON.parse(modelJSON);
-const network = NetworkController.loadNetwork(modelData);
+const network = loadNetwork(modelData);
 
 console.log(network.forward([1, 0]));
 console.log(network.forward([0, 0]));
