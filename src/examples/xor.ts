@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
-import NetworkController from "../core/NetworkController";
+import { loadNetwork } from "../core/networkController";
 
 const modelJSON = readFileSync("src/weights/xor.json", "utf-8");
 const modelData = JSON.parse(modelJSON);
-const network = NetworkController.loadNetwork(modelData);
+const network = loadNetwork(modelData);
 
 const in1 = new Float32Array([1, 0]);
 const in2 = new Float32Array([0, 0]);

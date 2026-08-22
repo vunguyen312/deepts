@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import NetworkController from "../core/NetworkController";
-import MNISTParser from "../utils/MNISTParser";
+import { loadNetwork } from "../core/networkController";
+import { MNISTParser } from "../utils/MNISTParser";
 
 // Requires the dataset: run `npm run data` (or scripts/download-mnist.sh) first.
 
@@ -14,7 +14,7 @@ const labels = testSet.getLabels();
 
 const modelJSON = readFileSync("src/weights/mnist.json", "utf-8");
 const modelData = JSON.parse(modelJSON);
-const network = NetworkController.loadNetwork(modelData);
+const network = loadNetwork(modelData);
 
 const averageNetworkAccuracy = () => {
     let correct = 0;
