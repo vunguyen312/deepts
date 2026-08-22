@@ -70,7 +70,7 @@ Below is an example of a small 3-layer neural network trained to solve the XOR p
 import { join } from "node:path";
 import { createNetwork, freezeToJSON } from "../core/networkController";
 import { Layer } from "../core/neuralNetwork";
-import { SGDOptimizer } from "../core/optimizer";
+import { SGD } from "../core/optimizer";
 
 const NUM_EPOCHS = 20000;
 
@@ -80,7 +80,7 @@ const network = createNetwork(
         new Layer("sigmoid", 3, 1)
     ]
 );
-const optimizer = new SGDOptimizer(network.getNeurons(), 0.4);
+const optimizer = new SGD(network.getNeurons(), 0.4);
 
 const in1 = new Float32Array([1, 0]);
 const in2 = new Float32Array([0, 0]);
@@ -107,7 +107,7 @@ Below is an example of a network trained on the MNIST dataset
 import { join } from "node:path";
 import { createNetwork, freezeToJSON } from "../core/networkController";
 import { Layer } from "../core/neuralNetwork";
-import { SGDOptimizer } from "../core/optimizer";
+import { SGD } from "../core/optimizer";
 import MNISTParser from "../utils/MNISTParser";
 
 const BATCH_SIZE = 64;
@@ -119,7 +119,7 @@ const network = createNetwork(
         new Layer("sigmoid", 30, 10)
     ]
 );
-const optimizer = new SGDOptimizer(network.getNeurons(), 0.00625);
+const optimizer = new SGD(network.getNeurons(), 0.00625);
 
 const trainingSet = new MNISTParser(
     join(__dirname, "../data/train-images.idx3-ubyte"),

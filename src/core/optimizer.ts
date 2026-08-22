@@ -21,7 +21,7 @@ export abstract class Optimizer {
     }
 }
 
-export class SGDOptimizer extends Optimizer {
+export class SGD extends Optimizer {
     private stepParams(params: Parameters): void {
         for (let i = 0; i < params.weights.length; i++) {
             params.weights[i] += this.learningRate * params.gradWeights[i];
