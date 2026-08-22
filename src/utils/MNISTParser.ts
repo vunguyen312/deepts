@@ -7,7 +7,7 @@ interface IdxImages {
     data: Uint8Array;
 }
 
-export default class MNISTParser {
+export class MNISTParser {
     private readonly imagesPath: string;
     private readonly labelsPath: string;
     private readonly idxImages: IdxImages;
