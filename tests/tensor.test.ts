@@ -261,3 +261,94 @@ test("Tensor.matmul rejects matrices of incompatible dimensions", () => {
         /incompatibility/
     );
 });
+
+test("Tensor.muls multiples element-wise in place", () => {
+    const mat1 = new Tensor([[1, 2, 3], [4, 5, 6]]);
+    const mat2 = new Tensor ([[2, 2, 2], [2, 2, 2]]);
+    mat1.muls(mat2);
+    assert.deepEqual(mat1.data, new Float32Array([2, 4, 6, 8, 10, 12]));
+});
+
+test("Tensor.muls rejects tensors of incompatible dimensions", () => {
+    assert.throws(
+        () => {
+            const mat1 = new Tensor([[1, 2, 3], [4, 5, 6]]);
+            const mat2 = new Tensor([[2, 2], [2, 2], [2, 2]]);
+            mat1.muls(mat2);
+        },
+        /same shape/
+    )
+});
+
+test("Tensor.mul multiples element-wise and returns a new tensor", () => {
+    const mat1 = new Tensor([[1, 2, 3], [4, 5, 6]]);
+    const mat2 = new Tensor ([[2, 2, 2], [2, 2, 2]]);
+    const result = mat1.mul(mat2);
+    assert.deepEqual(mat1.data, new Float32Array([1, 2, 3, 4, 5, 6]));
+    assert.deepEqual(result.data, new Float32Array([2, 4, 6, 8, 10, 12]));
+});
+
+test("Tensor.adds adds element-wise in place", () => {
+    const mat1 = new Tensor([[1, 2, 3], [4, 5, 6]]);
+    const mat2 = new Tensor ([[2, 2, 2], [2, 2, 2]]);
+    mat1.adds(mat2);
+    assert.deepEqual(mat1.data, new Float32Array([3, 4, 5, 6, 7, 8]));
+});
+
+test("Tensor.adds rejects tensors of incompatible dimensions", () => {
+    assert.throws(
+        () => {
+            const mat1 = new Tensor([[1, 2, 3], [4, 5, 6]]);
+            const mat2 = new Tensor([[2, 2], [2, 2], [2, 2]]);
+            mat1.adds(mat2);
+        },
+        /same shape/
+    )
+});
+
+test("Tensor.add adds element-wise and returns a new tensor", () => {
+    const mat1 = new Tensor([[1, 2, 3], [4, 5, 6]]);
+    const mat2 = new Tensor ([[2, 2, 2], [2, 2, 2]]);
+    const result = mat1.add(mat2);
+    assert.deepEqual(mat1.data, new Float32Array([1, 2, 3, 4, 5, 6]));
+    assert.deepEqual(result.data, new Float32Array([3, 4, 5, 6, 7, 8]));
+});
+
+test("Tensor.subs subtracts element-wise in place", () => {
+    const mat1 = new Tensor([[1, 2, 3], [4, 5, 6]]);
+    const mat2 = new Tensor ([[2, 2, 2], [2, 2, 2]]);
+    mat1.subs(mat2);
+    assert.deepEqual(mat1.data, new Float32Array([-1, 0, 1, 2, 3, 4]));
+});
+
+test("Tensor.subs rejects tensors of incompatible dimensions", () => {
+    assert.throws(
+        () => {
+            const mat1 = new Tensor([[1, 2, 3], [4, 5, 6]]);
+            const mat2 = new Tensor([[2, 2], [2, 2], [2, 2]]);
+            mat1.subs(mat2);
+        },
+        /same shape/
+    )
+});
+
+test("Tensor.sub subtracts element-wise and returns a new tensor", () => {
+    const mat1 = new Tensor([[1, 2, 3], [4, 5, 6]]);
+    const mat2 = new Tensor ([[2, 2, 2], [2, 2, 2]]);
+    const result = mat1.sub(mat2);
+    assert.deepEqual(mat1.data, new Float32Array([1, 2, 3, 4, 5, 6]));
+    assert.deepEqual(result.data, new Float32Array([-1, 0, 1, 2, 3, 4]));
+});
+
+test("Tensor.scales multiples element-wise in place by a scalar", () => {
+    const mat1 = new Tensor([[1, 2, 3], [4, 5, 6]]);
+    mat1.scales(2);
+    assert.deepEqual(mat1.data, new Float32Array([2, 4, 6, 8, 10, 12]));
+});
+
+test("Tensor.scale multiples by a factor, returning a new tensor", () => {
+    const mat1 = new Tensor([[1, 2, 3], [4, 5, 6]]);
+    const result = mat1.scale(2);
+    assert.deepEqual(mat1.data, new Float32Array([1, 2, 3, 4, 5, 6]));
+    assert.deepEqual(result.data, new Float32Array([2, 4, 6, 8, 10, 12]));
+});

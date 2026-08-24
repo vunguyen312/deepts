@@ -3,55 +3,56 @@
 type NestedNumberArray = number | NestedNumberArray[];
 type TensorOperation = "dot" | "matmul";
 
-class TensorAssert {
-    public static assertValidShape(dataLength: number, 
-                                    shape: number[]): void {
-        let totalElements = 1;
-        for (let i = 0; i < shape.length; i++) {
-            const currDim = shape[i];
-            const isCurrDimSafeInt = Number.isSafeInteger(currDim);
-            if (!isCurrDimSafeInt || currDim <= 0) {
-                throw new Error(
-                    `Tensor contains invalid dimension ${currDim}. Must be ` +
-                    `positive safe integer.`
-                );
-            }
-            totalElements *= shape[i];
-        }
-        if (totalElements !== dataLength) {
-            throw new Error(
-                `Tensor of dimensions [${shape}] requires ` +
-                `${totalElements} elements but got ${dataLength}.`
-            );
-        }
-    }
-
-    public static assertDims(tensor: Tensor, op: TensorOperation,
-                               expectedDims: number): void {
-        if (tensor.shape.length === expectedDims) {
-            return;
+const assertValidShape = (dataLength: number, shape: number[]): void => {
+    let totalElements = 1;
+    for (const dim of shape) {
+        const currDim = dim;
+        const isCurrDimSafeInt = Number.isSafeInteger(currDim);
+        if (isCurrDimSafeInt && currDim > 0) {
+            totalElements *= dim;
+            continue;
         }
         throw new Error(
-            `${op}: Tensors must be ${expectedDims}D, given ` +
-            `${tensor.shape.length}.`
+            `Tensor contains invalid dimension ${currDim}. Must be ` +
+            `positive safe integer.`
         );
     }
 
-    public static assertSameShape(tensor1: Tensor, tensor2: Tensor) {
-        let matchesDims = true;
-        for (let i = 0; i < tensor1.shape.length; i++) {
-            if (tensor1.shape[i] !== tensor2.shape[i]) {
-                matchesDims = false;
-            }
-        }
+    if (totalElements === dataLength) {
+        return;
+    }
+    throw new Error(
+        `Tensor of dimensions [${shape}] requires ` +
+        `${totalElements} elements but got ${dataLength}.`
+    );
+}
 
-        if (tensor1.shape.length !== tensor2.shape.length || !matchesDims) {
-            throw new Error(
-                `Tensors must be of the same shape, given ` + 
-                `${tensor1.shape} and ${tensor2.shape}`
-            );
+const assertDims = (tensor: Tensor, op: TensorOperation, 
+                    expectedDims: number): void => {
+    if (tensor.shape.length === expectedDims) {
+        return;
+    }
+    throw new Error(
+        `${op}: Tensors must be ${expectedDims}D, given ` +
+        `${tensor.shape.length}.`
+    );
+}
+
+const assertSameShape = (tensor1: Tensor, tensor2: Tensor): void => {
+    let matchesDims = true;
+    for (let i = 0; i < tensor1.shape.length; i++) {
+        if (tensor1.shape[i] !== tensor2.shape[i]) {
+            matchesDims = false;
         }
     }
+
+    if (tensor1.shape.length === tensor2.shape.length && matchesDims) {
+        return;
+    }
+    throw new Error(
+        `Tensors must be of the same shape, given ` + 
+        `${tensor1.shape} and ${tensor2.shape}`
+    );
 }
 
 export class Tensor {
@@ -66,7 +67,7 @@ export class Tensor {
         if (data instanceof Float32Array) {
             this.data = new Float32Array(data);
             this.shape = [...shape!];
-            TensorAssert.assertValidShape(data.length, shape!);
+            assertValidShape(data.length, shape!);
             this.strides = this.calcStrides();
             return;
         }
@@ -155,8 +156,8 @@ export class Tensor {
 
     public dot(tensor: Tensor): number {
         const VECTOR_DIMS = 1;
-        TensorAssert.assertDims(this, "dot", VECTOR_DIMS);
-        TensorAssert.assertDims(tensor, "dot", VECTOR_DIMS);
+        assertDims(this, "dot", VECTOR_DIMS);
+        assertDims(tensor, "dot", VECTOR_DIMS);
 
         const vecOneLen = this.shape[0];
         const vecTwoLen = tensor.shape[0];
@@ -225,7 +226,7 @@ export class Tensor {
     }
 
     public muls(tensor: Tensor): void {
-        TensorAssert.assertSameShape(this, tensor);
+        assertSameShape(this, tensor);
         for (let i = 0; i < this.data.length; i++) {
             this.data[i] *= tensor.data[i];
         }
@@ -238,7 +239,7 @@ export class Tensor {
     }
 
     public adds(tensor: Tensor): void {
-        TensorAssert.assertSameShape(this, tensor);
+        assertSameShape(this, tensor);
         for (let i = 0; i < this.data.length; i++) {
             this.data[i] += tensor.data[i];
         }
@@ -251,7 +252,7 @@ export class Tensor {
     }
 
     public subs(tensor: Tensor): void {
-        TensorAssert.assertSameShape(this, tensor);
+        assertSameShape(this, tensor);
         for (let i = 0; i < this.data.length; i++) {
             this.data[i] -= tensor.data[i];
         }

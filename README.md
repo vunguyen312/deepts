@@ -180,8 +180,16 @@ Contributions are welcome.
 1.  Fork the repository
 2.  Create a new branch
 3.  Commit your changes
+4.  Make sure your changes pass ```npm test```
 4.  Push to your branch
 5.  Open a pull request
+
+### AI CONTRIBUTIONS
+Please include the first prompt and at least 1-2 *human-written* 
+sentences at the top of your PR detailing changes to the best of your ability.
+
+Passing the test suite is *not* a bullet-proof indicator of correctness and
+should not be treated as such. Please perform your own testing for bugs as well!
 
 ------------------------------------------------------------------------
 
