@@ -60,18 +60,16 @@ export class Layer {
         return {
             gradWeights: Tensor.zeros([this.outputSize, this.inputSize]),
             gradBiases: Tensor.zeros([this.outputSize]),
-            weights: Tensor.xavier([this.outputSize, this.inputSize], this.inputSize, this.outputSize),
+            weights: Tensor.xavier([this.outputSize, this.inputSize], 
+                                   this.inputSize, this.outputSize),
             biases: Tensor.rand([this.outputSize]),
         };
     }
 
     private computeDeltas(errors: Tensor): Tensor {
-        const { data, shape } = this.weightedSums;
-        const activationDerivs = new Tensor(data, shape);
-        for (let i = 0; i < activationDerivs.data.length; i++) {
-            const currDelta = activationDerivs.data[i];
-            activationDerivs.data[i] = this.activation.derivative(currDelta);
-        }
+        const activationDerivs = this.weightedSums.map(element => 
+            this.activation.derivative(element)
+        );
         return errors.mul(activationDerivs);
     }
 
@@ -82,12 +80,7 @@ export class Layer {
         computedResult.adds(this.params.biases);
         this.weightedSums = new Tensor(computedResult.data, 
                                        computedResult.shape);
-
-        for (let i = 0; i < computedResult.data.length; i++) {
-            const currComputedRes = computedResult.data[i];
-            // TODO: Change activation functions to take in vectors
-            computedResult.data[i] = this.activation.fn(currComputedRes);
-        }
+        computedResult.maps(element => this.activation.fn(element));
         return computedResult;
     }
 

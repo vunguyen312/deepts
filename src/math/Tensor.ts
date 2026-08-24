@@ -1,7 +1,7 @@
 // Waterloo MATH136 trauma #thosewhoknow
 
 type NestedNumberArray = number | NestedNumberArray[];
-type TensorOperation = "dot" | "matmul";
+type Transformer<T, R> = (input: T) => R;
 
 const assertValidShape = (dataLength: number, shape: number[]): void => {
     let totalElements = 1;
@@ -27,14 +27,14 @@ const assertValidShape = (dataLength: number, shape: number[]): void => {
     );
 }
 
-const assertDims = (tensor: Tensor, op: TensorOperation, 
+const assertDims = (tensor: Tensor, op: string, 
                     expectedDims: number): void => {
-    if (tensor.shape.length === expectedDims) {
+    const { length } = tensor.shape;
+    if (length === expectedDims) {
         return;
     }
     throw new Error(
-        `${op}: Tensors must be ${expectedDims}D, given ` +
-        `${tensor.shape.length}.`
+        `${op}: Tensors must be ${expectedDims}D, given ${length}.`
     );
 }
 
@@ -57,8 +57,8 @@ const assertSameShape = (tensor1: Tensor, tensor2: Tensor): void => {
 
 export class Tensor {
     public data: Float32Array;
-    public shape: number[];
-    public strides: number[];
+    private _shape: number[];
+    private _strides: number[];
 
     constructor(data: NestedNumberArray);
     constructor(data: Float32Array, shape: number[]);
@@ -66,24 +66,24 @@ export class Tensor {
     constructor(data: NestedNumberArray | Float32Array, shape?: number[]) {
         if (data instanceof Float32Array) {
             this.data = new Float32Array(data);
-            this.shape = [...shape!];
+            this._shape = [...shape!];
             assertValidShape(data.length, shape!);
-            this.strides = this.calcStrides();
+            this._strides = this.calcStrides();
             return;
         }
 
         const flatData: number[] = [];
-        this.shape = [];
+        this._shape = [];
         const layer = 0;
         this.walk(data, flatData, layer);
-        this.strides = this.calcStrides();
+        this._strides = this.calcStrides();
         this.data = new Float32Array(flatData);
     }
 
     private calcStrides(): number[] {
-        const strides = new Array(this.shape.length).fill(1);
+        const strides = new Array(this._shape.length).fill(1);
         for (let i = strides.length - 2; i >= 0; i--) {
-            strides[i] = strides[i + 1] * this.shape[i + 1];
+            strides[i] = strides[i + 1] * this._shape[i + 1];
         }
         return strides;
     }
@@ -99,9 +99,9 @@ export class Tensor {
             throw new Error("Tensors cannot contain empty subarrays.");
         }
 
-        const currDim = this.shape[layer];
+        const currDim = this._shape[layer];
         if (!currDim) {
-            this.shape[layer] = data.length;
+            this._shape[layer] = data.length;
         } else if (currDim !== data.length) {
             throw new Error(
                 `Tensor contains mismatched dimensions ${currDim} ` +
@@ -159,7 +159,7 @@ export class Tensor {
         assertDims(this, "dot", VECTOR_DIMS);
         assertDims(tensor, "dot", VECTOR_DIMS);
 
-        const vecOneLen = this.shape[0];
+        const vecOneLen = this._shape[0];
         const vecTwoLen = tensor.shape[0];
         if (vecOneLen !== vecTwoLen) {
             throw new Error(
@@ -178,7 +178,7 @@ export class Tensor {
     public matmul(tensor: Tensor): Tensor {
         // ok bro ill be honest this function is straight up robo-slop
         // just a placeholder until I figure out broadcasting
-        const leftDims = this.shape.length;
+        const leftDims = this._shape.length;
         const rightDims = tensor.shape.length;
         if ((leftDims !== 1 && leftDims !== 2) ||
             (rightDims !== 1 && rightDims !== 2)) {
@@ -190,18 +190,18 @@ export class Tensor {
         if (leftDims === 1 && rightDims === 1) {
             throw new Error(
                 `matmul: Vector-vector products must use dot, given ` +
-                `${this.shape} and ${tensor.shape}.`
+                `${this._shape} and ${tensor.shape}.`
             );
         }
 
-        const leftRowCount = leftDims === 1 ? 1 : this.shape[0];
-        const leftColCount = leftDims === 1 ? this.shape[0] : this.shape[1];
+        const leftRowCount = leftDims === 1 ? 1 : this._shape[0];
+        const leftColCount = leftDims === 1 ? this._shape[0] : this._shape[1];
         const rightRowCount = tensor.shape[0];
         const rightColCount = rightDims === 1 ? 1 : tensor.shape[1];
         if (leftColCount !== rightRowCount) {
             throw new Error(
                 `matmul: Matrix shape incompatibility, given ` +
-                `${this.shape} and ${tensor.shape}.`
+                `${this._shape} and ${tensor.shape}.`
             );
         }
 
@@ -233,7 +233,7 @@ export class Tensor {
     }
 
     public mul(tensor: Tensor): Tensor {
-        const result = new Tensor(this.data, this.shape);
+        const result = new Tensor(this.data, this._shape);
         result.muls(tensor);
         return result;
     }
@@ -246,7 +246,7 @@ export class Tensor {
     }
 
     public add(tensor: Tensor): Tensor {
-        const result = new Tensor(this.data, this.shape);
+        const result = new Tensor(this.data, this._shape);
         result.adds(tensor);
         return result;
     }
@@ -259,7 +259,7 @@ export class Tensor {
     }
 
     public sub(tensor: Tensor): Tensor {
-        const result = new Tensor(this.data, this.shape);
+        const result = new Tensor(this.data, this._shape);
         result.subs(tensor);
         return result;
     }
@@ -271,8 +271,28 @@ export class Tensor {
     }
 
     public scale(factor: number): Tensor {
-        const result = new Tensor(this.data, this.shape);
+        const result = new Tensor(this.data, this._shape);
         result.scales(factor);
         return result;
+    }
+    
+    public maps(callback: Transformer<number, number>): void {
+        for (let i = 0; i < this.data.length; i++) {
+            this.data[i] = callback(this.data[i]);
+        }
+    }
+
+    public map(callback: Transformer<number, number>): Tensor {
+        const result = new Tensor(this.data, this._shape);
+        result.maps(callback);
+        return result;
+    }
+
+    public get shape(): number[] {
+        return this._shape;
+    }
+
+    public get strides(): number[] {
+        return this._strides;
     }
 }

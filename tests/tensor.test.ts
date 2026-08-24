@@ -352,3 +352,16 @@ test("Tensor.scale multiples by a factor, returning a new tensor", () => {
     assert.deepEqual(mat1.data, new Float32Array([1, 2, 3, 4, 5, 6]));
     assert.deepEqual(result.data, new Float32Array([2, 4, 6, 8, 10, 12]));
 });
+
+test("Tensor.maps performs a callback on every element in place", () => {
+    const mat1 = new Tensor([[1, 2, 3], [4, 5, 6]]);
+    mat1.maps(element => element + 1);
+    assert.deepEqual(mat1.data, new Float32Array([2, 3, 4, 5, 6, 7]));
+});
+
+test("Tensor.map performs a callback on every element on a new tensor", () => {
+    const mat1 = new Tensor([[1, 2, 3], [4, 5, 6]]);
+    const result = mat1.map(element => element + 1);
+    assert.deepEqual(mat1.data, new Float32Array([1, 2, 3, 4, 5, 6]));
+    assert.deepEqual(result.data, new Float32Array([2, 3, 4, 5, 6, 7]));
+});
