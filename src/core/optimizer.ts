@@ -9,11 +9,9 @@ export abstract class Optimizer {
         this.learningRate = learningRate;
     }
 
-    private zeroGradParams(params: Parameters): void {
-        for (let i = 0; i < params.gradWeights.length; i++) {
-            params.gradWeights[i] = 0;
-        }
-        params.gradBias = 0;
+    private zeroGradParams({ gradWeights, gradBiases }: Parameters): void {
+        gradWeights.zero();
+        gradBiases.zero();
     }
 
     public zeroGrad(): void {
@@ -23,10 +21,14 @@ export abstract class Optimizer {
 
 export class SGD extends Optimizer {
     private stepParams(params: Parameters): void {
-        for (let i = 0; i < params.weights.length; i++) {
-            params.weights[i] += this.learningRate * params.gradWeights[i];
+        for (let i = 0; i < params.weights.data.length; i++) {
+            const updateStep = this.learningRate * params.gradWeights.data[i];
+            params.weights.data[i] += updateStep;
         }
-        params.bias += this.learningRate * params.gradBias;
+        for (let i = 0; i < params.biases.data.length; i++) {
+            const updateStep = this.learningRate * params.gradBiases.data[i];
+            params.biases.data[i] += updateStep;
+        }
     }
 
     public step(): void {

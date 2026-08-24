@@ -67,7 +67,7 @@ Only needed for the MNIST example; the XOR example works without it.
 ### XOR Neural Network
 Below is an example of a small 3-layer neural network trained to solve the XOR problem
 ```typescript
-import { join } from "node:path";
+import { Tensor } from "../math/Tensor";
 import { createNetwork, freezeToJSON } from "../core/networkController";
 import { Layer } from "../core/neuralNetwork";
 import { SGD } from "../core/optimizer";
@@ -76,18 +76,18 @@ const NUM_EPOCHS = 20000;
 
 const network = createNetwork(
     [
-        new Layer("sigmoid", 2, 3), 
+        new Layer("relu", 2, 3), 
         new Layer("sigmoid", 3, 1)
     ]
 );
-const optimizer = new SGD(network.getNeurons(), 0.4);
+const optimizer = new SGD(network.params, 0.4);
 
-const in1 = new Float32Array([1, 0]);
-const in2 = new Float32Array([0, 0]);
-const in3 = new Float32Array([1, 1]);
-const in4 = new Float32Array([0, 1]);
-const ex1 = new Float32Array([1]);
-const ex2 = new Float32Array([0]);
+const in1 = new Tensor([1, 0]);
+const in2 = new Tensor([0, 0]);
+const in3 = new Tensor([1, 1]);
+const in4 = new Tensor([0, 1]);
+const ex1 = new Tensor([1]);
+const ex2 = new Tensor([0]);
 
 for (let epoch = 0; epoch < NUM_EPOCHS; epoch++) {
     optimizer.zeroGrad();
@@ -98,7 +98,7 @@ for (let epoch = 0; epoch < NUM_EPOCHS; epoch++) {
     optimizer.step();
 }
 
-freezeToJSON(network, join(__dirname, "../weights/xor.json"));
+freezeToJSON(network, "src/weights/xor.json");
 ```
 
 ### MNIST Neural Network
@@ -108,7 +108,7 @@ import { join } from "node:path";
 import { createNetwork, freezeToJSON } from "../core/networkController";
 import { Layer } from "../core/neuralNetwork";
 import { SGD } from "../core/optimizer";
-import MNISTParser from "../utils/MNISTParser";
+import { MNISTParser } from "../utils/MNISTParser";
 
 const BATCH_SIZE = 64;
 const NUM_EPOCHS = 30;
@@ -119,7 +119,7 @@ const network = createNetwork(
         new Layer("sigmoid", 30, 10)
     ]
 );
-const optimizer = new SGD(network.getNeurons(), 0.00625);
+const optimizer = new SGD(network.params, 0.00625);
 
 const trainingSet = new MNISTParser(
     join(__dirname, "../data/train-images.idx3-ubyte"),
@@ -143,24 +143,32 @@ for (let epoch = 0; epoch < NUM_EPOCHS; epoch++) {
     }
 }
 
-freezeToJSON(network, join(__dirname, "../weights/mnist.json"));
+freezeToJSON(network, "src/weights/mnist.json");
 ```
 
 ### Loading Networks
 Below is an example of a network being loaded from a frozen model JSON file
 ```typescript
-import { readFileSync } from "fs";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import { loadNetwork } from "../core/networkController";
+import { Tensor } from "../math/Tensor";
 
-const modelPath = join(__dirname, "../weights/xor.json");
-const modelJSON = readFileSync(modelPath, "utf-8");
+const modelJSON = readFileSync("src/weights/xor.json", "utf-8");
 const modelData = JSON.parse(modelJSON);
 const network = loadNetwork(modelData);
 
-console.log(network.forward([1, 0]));
-console.log(network.forward([0, 0]));
-console.log(network.forward([1, 1]));
+const in1 = new Tensor([1, 0]);
+const in2 = new Tensor([0, 0]);
+const in3 = new Tensor([1, 1]);
+const in4 = new Tensor([0, 1]);
+
+console.log("-----------------------------------------");
+console.log("XOR Neural Network");
+console.log("Result of [1, 0]: " + network.forward(in1).data);
+console.log("Result of [0, 0]: " + network.forward(in2).data);
+console.log("Result of [1, 1]: " + network.forward(in3).data);
+console.log("Result of [0, 1]: " + network.forward(in4).data);
+console.log("-----------------------------------------");
 ```
 
 ------------------------------------------------------------------------

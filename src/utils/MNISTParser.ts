@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { Tensor } from "../math/Tensor";
 
 interface IdxImages {
     count: number;
@@ -82,17 +83,18 @@ export class MNISTParser {
         return labels;
     }
 
-    public imageAt(i: number): Float32Array {
+    public imageAt(i: number): Tensor {
         const size = this.idxImages.rows * this.idxImages.cols;
         const slice = this.idxImages.data.subarray(i * size, (i + 1) * size);
-        return Float32Array.from(slice, v => v / 255);
+        const data = Float32Array.from(slice, v => v / 255);
+        return new Tensor(data, [size]);
     }
 
-    public oneHot(label: number): Float32Array {
+    public oneHot(label: number): Tensor {
         const NUM_DIGITS = 10;
         const expectedVec = new Float32Array(NUM_DIGITS);
         expectedVec[label] = 1;
-        return expectedVec;
+        return new Tensor(expectedVec, [NUM_DIGITS]);
     }
 
     public argMax(vec: Float32Array): number {

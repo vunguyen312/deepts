@@ -88,6 +88,21 @@ test("Tensor.rand elements are finite and within float32 [0, 1]", () => {
                   `value ${element} out of range [0, 1]`);
     }
 });
+test("Tensor.xavier returns a Tensor with the requested shape", () => {
+    const tensor = Tensor.xavier([2, 3], 2, 3);
+    assert.deepEqual(tensor.shape, [2, 3]);
+    assert.deepEqual(tensor.strides, [3, 1]);
+});
+
+test("Tensor.xavier bounds values by the fan-in/fan-out limit", () => {
+    const limit = Math.sqrt(6 / (2 + 3));
+    const tensor = Tensor.xavier([2, 3], 2, 3);
+    for (const element of tensor.data) {
+        assert.ok(Number.isFinite(element), `value ${element} is not finite`);
+        assert.ok(element >= -limit && element <= limit,
+                  `value ${element} out of range [-${limit}, ${limit}]`);
+    }
+});
 
 test("Tensor.rand computes row-major strides", () => {
     const tensor = Tensor.rand([2, 3, 4]);
@@ -171,14 +186,68 @@ test("Tensor.matmul produces the matrix multiplication of two matrices", () => {
     assert.deepEqual(mulResult.strides, [2, 1]);
 });
 
-test("Tensor.matmul rejects non-matrix operands", () => {
+test("Tensor.matmul multiplies a matrix by a column vector", () => {
+    const mat = new Tensor([[-1, 4], [2, 3]]);
+    const vec = new Tensor([2, -1]);
+    const result = mat.matmul(vec);
+    assert.deepEqual(result.data, new Float32Array([-6, 1]));
+    assert.deepEqual(result.shape, [2]);
+    assert.deepEqual(result.strides, [1]);
+});
+
+test("Tensor.matmul multiplies a row vector by a matrix", () => {
+    const vec = new Tensor([2, -1]);
+    const mat = new Tensor([[-1, 4], [2, 3]]);
+    const result = vec.matmul(mat);
+    assert.deepEqual(result.data, new Float32Array([-4, 5]));
+    assert.deepEqual(result.shape, [2]);
+});
+
+test("Tensor.matmul multiplies a non-square matrix by a column vector", () => {
+    const mat = new Tensor([[1, 2], [3, 4], [5, 6]]);
+    const vec = new Tensor([7, 8]);
+    const result = mat.matmul(vec);
+    assert.deepEqual(result.data, new Float32Array([23, 53, 83]));
+    assert.deepEqual(result.shape, [3]);
+    assert.deepEqual(result.strides, [1]);
+});
+
+test("Tensor.matmul multiplies a row vector by a non-square matrix", () => {
+    const vec = new Tensor([1, 2]);
+    const mat = new Tensor([[1, 2, 3], [4, 5, 6]]);
+    const result = vec.matmul(mat);
+    assert.deepEqual(result.data, new Float32Array([9, 12, 15]));
+    assert.deepEqual(result.shape, [3]);
+});
+
+test("Tensor.matmul rejects vector-vector products (use dot)", () => {
     assert.throws(
         () => {
-            const mat1 = new Tensor([1, 2, 3]);
-            const mat2 = new Tensor([[1, 2], [3, 4]]);
-            mat1.matmul(mat2);
+            new Tensor([1, 2]).matmul(new Tensor([3, 4]));
         },
-        /must be/
+        /dot/
+    );
+});
+
+test("Tensor.matmul rejects vectors with incompatible dimensions", () => {
+    assert.throws(
+        () => {
+            const vec = new Tensor([1, 2, 3]);
+            const mat = new Tensor([[1, 2], [3, 4]]);
+            vec.matmul(mat);
+        },
+        /incompatibility/
+    );
+});
+
+test("Tensor.matmul rejects operands with more than two dimensions", () => {
+    assert.throws(
+        () => {
+            const cube = new Tensor([[[1]]]);
+            const mat = new Tensor([[1]]);
+            cube.matmul(mat);
+        },
+        /1D or 2D/
     );
 });
 

@@ -1,4 +1,4 @@
-import { Neuron, Layer, NeuralNetwork, FrozenLayer, FrozenNetwork } from "./neuralNetwork";
+import { Layer, NeuralNetwork, FrozenNetwork } from "./neuralNetwork";
 import { writeFile } from "fs/promises";
 
 export const createNetwork = (layers: Layer[]): NeuralNetwork => {
@@ -16,23 +16,14 @@ export const freezeToJSON = async (network: NeuralNetwork,
     }
 }
 
-const loadNeurons = (layer: FrozenLayer): Neuron[] => {
-    const neurons: Neuron[] = [];
-    for (const neuron of layer.neurons) {
-        const newNeuron = new Neuron(new Float32Array(neuron.weights), 
-                                     neuron.bias);
-        neurons.push(newNeuron);
-    }
-
-    return neurons;
-}
-
 export const loadNetwork = (frozenNetwork: FrozenNetwork): NeuralNetwork => {
     const layers: Layer[] = [];
     for (const layer of frozenNetwork.layers) {
-        const neurons = loadNeurons(layer);
+        const floatWeights = new Float32Array(layer.weights);
+        const floatBiases = new Float32Array(layer.biases);
         const newLayer = new Layer(layer.activation, layer.inputSize, 
-                                   layer.outputSize, neurons);
+                                   layer.outputSize, floatWeights, 
+                                   floatBiases);
         layers.push(newLayer);
     }
 
