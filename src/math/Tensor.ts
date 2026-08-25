@@ -288,6 +288,16 @@ export class Tensor {
         return result;
     }
 
+    public transposes(): void {
+        
+    }
+
+    public transpose(): Tensor {
+        const result = new Tensor(this.data, this._shape);
+        result.transposes();
+        return result;
+    }
+
     public get shape(): number[] {
         return this._shape;
     }

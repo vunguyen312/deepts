@@ -49,20 +49,21 @@ export class Layer {
 
     private generateParameters(weights: Float32Array, 
                                biases: Float32Array): Parameters {
+        const layerShape = [this.outputSize, this.inputSize];
+        const neuronsShape = [this.outputSize];
         if (weights && biases) {
             return {
-                gradWeights: Tensor.zeros([this.outputSize, this.inputSize]),
-                gradBiases: Tensor.zeros([this.outputSize]),
-                weights: new Tensor(weights, [this.outputSize, this.inputSize]),
-                biases: new Tensor(biases, [this.outputSize]),
+                gradWeights: Tensor.zeros(layerShape),
+                gradBiases: Tensor.zeros(neuronsShape),
+                weights: new Tensor(weights, layerShape),
+                biases: new Tensor(biases, neuronsShape),
             };
         }
         return {
-            gradWeights: Tensor.zeros([this.outputSize, this.inputSize]),
-            gradBiases: Tensor.zeros([this.outputSize]),
-            weights: Tensor.xavier([this.outputSize, this.inputSize], 
-                                   this.inputSize, this.outputSize),
-            biases: Tensor.rand([this.outputSize]),
+            gradWeights: Tensor.zeros(layerShape),
+            gradBiases: Tensor.zeros(neuronsShape),
+            weights: Tensor.xavier(layerShape, this.inputSize, this.outputSize),
+            biases: Tensor.rand(neuronsShape),
         };
     }
 
@@ -101,10 +102,8 @@ export class Layer {
 
     public backward(errors: Tensor): Tensor {
         const deltas = this.computeDeltas(errors);
-
         const weights = this.params.weights;
         const prevErrors = deltas.matmul(weights);
-
         this.accumulateGrad(deltas);
 
         return prevErrors;
