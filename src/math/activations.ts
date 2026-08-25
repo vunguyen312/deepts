@@ -25,10 +25,17 @@ export const sigmoid: Activation = {
     }
 };
 
+export const tanh: Activation = {
+    id: "tanh",
+    fn: x => 2 / (1 + Math.exp(-2 * x)) - 1,
+    derivative: x => 1 - tanh.fn(x) ** 2
+}
+
 export const activationMap = {
     step,
     relu,
-    sigmoid
+    sigmoid,
+    tanh
 } satisfies Record<string, Activation>;
 // Builds a mapping for Activations by their strings
 export type ActivationFunc = keyof typeof activationMap;
