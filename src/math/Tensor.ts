@@ -148,13 +148,10 @@ export class Tensor {
     public static zeros(shape: number[]): Tensor {
         const totalElements = shape.reduce((acc, curr) => acc * curr, 1);
         const data = new Float32Array(totalElements);
-        for (let i = 0; i < totalElements; i++) {
-            data[i] = 0;
-        }
         return new Tensor(data, shape);
     }
 
-    public dot(tensor: Tensor): number {
+    public dot(tensor: Tensor): Tensor {
         const VECTOR_DIMS = 1;
         assertDims(this, "dot", VECTOR_DIMS);
         assertDims(tensor, "dot", VECTOR_DIMS);
@@ -168,18 +165,21 @@ export class Tensor {
             );
         }
 
-        let result = 0;
+        let result = new Float32Array(1);
         for (let i = 0; i < vecOneLen; i++) {
-            result += this.data[i] * tensor.data[i];
+            result[0] += this.data[i] * tensor.data[i];
         }
-        return result;
+        return new Tensor(result, []);
     }
 
     public matmul(tensor: Tensor): Tensor {
         const MATRIX_DIMS = 2;
+        const SCALAR_DIMS = 0;
         const leftDims = this._shape.length;
         const rightDims = tensor.shape.length;
-        if (leftDims > MATRIX_DIMS || rightDims > MATRIX_DIMS) {
+        if (leftDims > MATRIX_DIMS || rightDims > MATRIX_DIMS
+            || leftDims === SCALAR_DIMS || rightDims === SCALAR_DIMS
+        ) {
             throw new Error(
                 `matmul: Tensors must be 1D or 2D, given ` +
                 `${leftDims}D and ${rightDims}D.`
@@ -294,7 +294,7 @@ export class Tensor {
     public transposes(dim1?: number, dim2?: number): void {
         const MATRIX_DIMS = 2;
         if (this._shape.length < MATRIX_DIMS) {
-            throw new Error("transpose: Invalid tensor shape");
+            throw new Error("transpose: Cannot transpose below 2D");
         }
 
         if (dim1 === undefined && dim2 === undefined

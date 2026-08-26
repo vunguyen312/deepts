@@ -152,7 +152,7 @@ test("Tensor.dot produces the dot product of two vectors", () => {
     const vec1 = new Tensor([1, 2, 3]);
     const vec2 = new Tensor([4, 5, 6]);
     const dotResult = vec1.dot(vec2);
-    assert.deepEqual(dotResult, 1 * 4 + 2 * 5 + 3 * 6);
+    assert.deepEqual(dotResult, new Tensor(1 * 4 + 2 * 5 + 3 * 6));
 });
 
 test("Tensor.dot rejects non-vector operands", () => {
