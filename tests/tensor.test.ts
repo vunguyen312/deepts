@@ -360,6 +360,7 @@ test("Tensor.map performs a callback on every element on a new tensor", () => {
 test("Tensor.transposes transposes a tensor in place", () => {
     const mat1 = new Tensor([[1, 2, 3], [4, 5, 6]]);
     mat1.transposes();
+    assert.deepEqual(mat1.data, new Float32Array([1, 4, 2, 5, 3, 6]));
     assert.deepEqual(mat1.shape, [3, 2]);
     assert.deepEqual(mat1.strides, [2, 1]);
 });
@@ -387,8 +388,10 @@ test("Tensor.transposes rejects tensors due to out of bounds args", () => {
 test("Tensor.transposes transposes a given tensor returns a new tensor", () => {
     const mat1 = new Tensor([[1, 2, 3], [4, 5, 6]]);
     const result = mat1.transpose();
+    assert.deepEqual(mat1.data, new Float32Array([1, 2, 3, 4, 5, 6]));
     assert.deepEqual(mat1.shape, [2, 3]);
     assert.deepEqual(mat1.strides, [3, 1]);
+    assert.deepEqual(result.data, new Float32Array([1, 4, 2, 5, 3, 6]));
     assert.deepEqual(result.shape, [3, 2]);
     assert.deepEqual(result.strides, [2, 1]);
 });
