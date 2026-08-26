@@ -176,28 +176,30 @@ export class Tensor {
     }
 
     public matmul(tensor: Tensor): Tensor {
-        // ok bro ill be honest this function is straight up robo-slop
-        // just a placeholder until I figure out broadcasting
+        const MATRIX_DIMS = 2;
         const leftDims = this._shape.length;
         const rightDims = tensor.shape.length;
-        if ((leftDims !== 1 && leftDims !== 2) ||
-            (rightDims !== 1 && rightDims !== 2)) {
+        if (leftDims > MATRIX_DIMS || rightDims > MATRIX_DIMS) {
             throw new Error(
                 `matmul: Tensors must be 1D or 2D, given ` +
                 `${leftDims}D and ${rightDims}D.`
             );
         }
-        if (leftDims === 1 && rightDims === 1) {
-            throw new Error(
-                `matmul: Vector-vector products must use dot, given ` +
-                `${this._shape} and ${tensor.shape}.`
-            );
+        
+        const VECTOR_DIMS = 1;
+        let leftShape = [...this._shape];
+        let rightShape = [...tensor.shape];
+        if (leftDims === VECTOR_DIMS) {
+            leftShape = [1, this._shape[0]];
+        }
+        if (rightDims === VECTOR_DIMS) {
+            rightShape = [tensor.shape[0], 1];
         }
 
-        const leftRowCount = leftDims === 1 ? 1 : this._shape[0];
-        const leftColCount = leftDims === 1 ? this._shape[0] : this._shape[1];
-        const rightRowCount = tensor.shape[0];
-        const rightColCount = rightDims === 1 ? 1 : tensor.shape[1];
+        const leftRowCount = leftShape[0];
+        const leftColCount = leftShape[1];
+        const rightRowCount = rightShape[0];
+        const rightColCount = rightShape[1];
         if (leftColCount !== rightRowCount) {
             throw new Error(
                 `matmul: Matrix shape incompatibility, given ` +
@@ -219,7 +221,8 @@ export class Tensor {
             }
         }
 
-        const resultShape = leftDims === 1 || rightDims === 1
+        const resultShape = leftDims === VECTOR_DIMS 
+                            || rightDims === VECTOR_DIMS
             ? [resultRowCount * resultColCount]
             : [resultRowCount, resultColCount];
         return new Tensor(resultData, resultShape);
@@ -288,8 +291,59 @@ export class Tensor {
         return result;
     }
 
-    public transposes(): void {
-        
+    public transposes(dim1?: number, dim2?: number): void {
+        const MATRIX_DIMS = 2;
+        if (this._shape.length < MATRIX_DIMS) {
+            throw new Error("transpose: Invalid tensor shape");
+        }
+
+        if (dim1 === undefined && dim2 === undefined
+            && this._shape.length === MATRIX_DIMS) {
+            this.transposes(0, 1);
+            return;
+        }
+
+        if (dim1 === undefined || dim2 === undefined) {
+            throw new Error("transpose: Must provide two dimensions to swap");
+        }
+
+        const MIN_INDEX = 0;
+        const MAX_INDEX = this._shape.length - 1;
+        if (dim1 < MIN_INDEX || dim2 < MIN_INDEX 
+            || dim1 > MAX_INDEX || dim2 > MAX_INDEX) {
+            throw new Error(
+                `transpose: Expected indices ` +
+                `0 <= x <= ${MAX_INDEX}, ` +
+                `given ${dim1} and ${dim2}` 
+            );
+        }
+
+        const oldShape = [...this._shape];
+        const oldStrides = [...this.strides];
+        this._shape[dim1] = oldShape[dim2];
+        this._shape[dim2] = oldShape[dim1];
+        const newStrides = this.calcStrides();
+        const newData = new Float32Array(this.data.length);
+        for (let i = 0; i < newData.length; i++) {
+            let remaining = i;
+            let oldOffset = 0;
+            for (let j = 0; j < this._shape.length; j++) {
+                const coord = Math.floor(remaining / newStrides[j]);
+                remaining %= newStrides[j];
+                let oldDim = j;
+                if (j === dim1) {
+                    oldDim = dim2;
+                }
+                if (j === dim2) {
+                    oldDim = dim1;
+                }
+                oldOffset += coord * oldStrides[oldDim];
+            }
+            newData[i] = this.data[oldOffset];
+        }
+    
+    this.data = newData;
+    this._strides = newStrides;
     }
 
     public transpose(): Tensor {
@@ -299,10 +353,10 @@ export class Tensor {
     }
 
     public get shape(): number[] {
-        return this._shape;
+        return [...this._shape];
     }
 
     public get strides(): number[] {
-        return this._strides;
+        return [...this._strides];
     }
 }

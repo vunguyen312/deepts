@@ -43,8 +43,8 @@ export class Layer {
         this.inputSize = inputSize;
         this.outputSize = outputSize;
         this.params = this.generateParameters(weights!, biases!);
-        this.inputs = Tensor.zeros([this.outputSize, this.inputSize]);
-        this.weightedSums = Tensor.zeros([this.outputSize])
+        this.inputs = Tensor.zeros([this.inputSize]);
+        this.weightedSums = Tensor.zeros([this.outputSize]);
     }
 
     private generateParameters(weights: Float32Array, 
@@ -87,13 +87,13 @@ export class Layer {
 
     private accumulateGrad(deltas: Tensor): void {
         const { gradWeights, gradBiases } = this.params;
-        for (let i = 0; i < this.outputSize; i++) {
-            for (let j = 0; j < this.inputSize; j++) {
-                const index = i * this.inputSize + j;
-                gradWeights.data[index] += deltas.data[i] * this.inputs.data[j];
-            }
-            gradBiases.data[i] += deltas.data[i];
-        }
+        // temp solution allocating new tensors
+        // also needs to be adjusted for when 2D+ tensors are taken in
+        const deltasColumn = new Tensor(deltas.data, [this.outputSize, 1]);
+        const inputsRow = new Tensor(this.inputs.data, [1, this.inputSize]);
+        const weightGrad = deltasColumn.matmul(inputsRow);
+        gradWeights.adds(weightGrad);
+        gradBiases.adds(deltas);
     }
 
     public forward(inputs: Tensor): Tensor {
