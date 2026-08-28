@@ -352,6 +352,17 @@ export class Tensor {
         return result;
     }
 
+    public reshapes(shape: number[]): void {
+        assertValidShape(this.data.length, shape);
+        this._shape = [...shape];
+        this._strides = this.calcStrides();
+    }
+
+    public reshape(shape: number[]): Tensor {
+        const result = new Tensor(this.data, shape);
+        return result;
+    }
+
     public get shape(): number[] {
         return [...this._shape];
     }
