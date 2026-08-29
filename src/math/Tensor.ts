@@ -121,7 +121,7 @@ export class Tensor {
         }
     }
     
-    public static rand(shape: number[]): Tensor {
+    public static rand(...shape: number[]): Tensor {
         const totalElements = shape.reduce((acc, curr) => acc * curr, 1);
         const data = new Float32Array(totalElements);
         for (let i = 0; i < totalElements; i++) {
@@ -130,8 +130,8 @@ export class Tensor {
         return new Tensor(data, shape);
     }
 
-    public static xavier(shape: number[], fanIn: number,
-                         fanOut: number): Tensor {
+    public static xavier(fanIn: number, fanOut: number, 
+                         ...shape: number[]): Tensor {
         const totalElements = shape.reduce((acc, curr) => acc * curr, 1);
         const limit = Math.sqrt(6 / (fanIn + fanOut));
         const data = new Float32Array(totalElements);
@@ -145,28 +145,43 @@ export class Tensor {
         this.data.fill(0);
     }
     
-    public static zeros(shape: number[]): Tensor {
+    public static zeros(...shape: number[]): Tensor {
         const totalElements = shape.reduce((acc, curr) => acc * curr, 1);
         const data = new Float32Array(totalElements);
         return new Tensor(data, shape);
     }
 
+    private static broadcast(tensor1: Tensor, tensor2: Tensor): number[] {
+        /* Very tired for today so I will note how broadcasting works.
+           Libs like PyTorch DO NOT create another Tensor in memory to broadcast.
+           They instead virtualize expansion by setting the strides of expanding dimensions to 0.
+           For two tensors to be broadcastable, they must be EITHER: Equal in shapes, missing one dimensions
+           compared to the other, or has dimensions of size 1. Take for example the tensors (3, 3) and (3, 1)
+           We modify the second one's stride, the Y stride to 0. This will also require refactoring adds, muls,
+           and subs
+           */
+        let largerTensor = tensor1;
+        let smallerTensor = tensor2;
+        if (tensor1.shape.length < tensor2.shape.length) {
+            largerTensor = tensor2;
+            smallerTensor = tensor1;
+        }
+        const largerTensorLen = largerTensor.shape.length;
+        const smallerTensorLen = smallerTensor.shape.length;
+        const dimensionsToFill = largerTensorLen - smallerTensorLen;
+        const UNIT_DIMS = 1;
+        const newShape = new Array(dimensionsToFill).fill(UNIT_DIMS);
+
+        return [1, 2];
+    }
+
     public dot(tensor: Tensor): Tensor {
         const VECTOR_DIMS = 1;
         assertDims(this, "dot", VECTOR_DIMS);
-        assertDims(tensor, "dot", VECTOR_DIMS);
-
-        const vecOneLen = this._shape[0];
-        const vecTwoLen = tensor.shape[0];
-        if (vecOneLen !== vecTwoLen) {
-            throw new Error(
-                `dot: Vectors must be of the same dimension, given ` +
-                `${vecOneLen} and ${vecTwoLen}.`
-            );
-        }
+        assertSameShape(this, tensor);
 
         let result = new Float32Array(1);
-        for (let i = 0; i < vecOneLen; i++) {
+        for (let i = 0; i < this.data.length; i++) {
             result[0] += this.data[i] * tensor.data[i];
         }
         return new Tensor(result, []);
@@ -187,13 +202,14 @@ export class Tensor {
         }
         
         const VECTOR_DIMS = 1;
+        const UNIT_DIMS = 1;
         let leftShape = [...this._shape];
         let rightShape = [...tensor.shape];
         if (leftDims === VECTOR_DIMS) {
-            leftShape = [1, this._shape[0]];
+            leftShape = [UNIT_DIMS, this._shape[0]];
         }
         if (rightDims === VECTOR_DIMS) {
-            rightShape = [tensor.shape[0], 1];
+            rightShape = [tensor.shape[0], UNIT_DIMS];
         }
 
         const leftRowCount = leftShape[0];
@@ -352,13 +368,13 @@ export class Tensor {
         return result;
     }
 
-    public reshapes(shape: number[]): void {
+    public reshapes(...shape: number[]): void {
         assertValidShape(this.data.length, shape);
         this._shape = [...shape];
         this._strides = this.calcStrides();
     }
 
-    public reshape(shape: number[]): Tensor {
+    public reshape(...shape: number[]): Tensor {
         const result = new Tensor(this.data, shape);
         return result;
     }

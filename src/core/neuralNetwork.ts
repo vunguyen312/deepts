@@ -43,27 +43,27 @@ export class Layer {
         this.inputSize = inputSize;
         this.outputSize = outputSize;
         this.params = this.generateParameters(weights!, biases!);
-        this.inputs = Tensor.zeros([this.inputSize]);
-        this.weightedSums = Tensor.zeros([this.outputSize]);
+        this.inputs = Tensor.zeros(this.inputSize);
+        this.weightedSums = Tensor.zeros(this.outputSize);
     }
 
     private generateParameters(weights: Float32Array, 
                                biases: Float32Array): Parameters {
         const layerShape = [this.outputSize, this.inputSize];
-        const neuronsShape = [this.outputSize];
         if (weights && biases) {
             return {
-                gradWeights: Tensor.zeros(layerShape),
-                gradBiases: Tensor.zeros(neuronsShape),
+                gradWeights: Tensor.zeros(...layerShape),
+                gradBiases: Tensor.zeros(this.outputSize),
                 weights: new Tensor(weights, layerShape),
-                biases: new Tensor(biases, neuronsShape),
+                biases: new Tensor(biases, [this.outputSize]),
             };
         }
         return {
-            gradWeights: Tensor.zeros(layerShape),
-            gradBiases: Tensor.zeros(neuronsShape),
-            weights: Tensor.xavier(layerShape, this.inputSize, this.outputSize),
-            biases: Tensor.rand(neuronsShape),
+            gradWeights: Tensor.zeros(...layerShape),
+            gradBiases: Tensor.zeros(this.outputSize),
+            weights: Tensor.xavier(this.inputSize, this.outputSize, 
+                                   ...layerShape),
+            biases: Tensor.rand(this.outputSize),
         };
     }
 
@@ -74,10 +74,10 @@ export class Layer {
         return errors.mul(activationDerivs);
     }
 
-    private compute(inputs: Tensor): Tensor {
-        this.inputs = new Tensor(inputs.data, inputs.shape);
+    private compute(): Tensor {
         const { weights } = this.params;
-        const computedResult = weights.matmul(inputs);
+        const weightsT = weights.transpose();
+        const computedResult = this.inputs.matmul(weightsT);
         computedResult.adds(this.params.biases);
         this.weightedSums = new Tensor(computedResult.data, 
                                        computedResult.shape);
@@ -87,17 +87,24 @@ export class Layer {
 
     private accumulateGrad(deltas: Tensor): void {
         const { gradWeights, gradBiases } = this.params;
-        // temp solution allocating new tensors
-        // also needs to be adjusted for when 2D+ tensors are taken in
-        const deltasColumn = new Tensor(deltas.data, [this.outputSize, 1]);
-        const inputsRow = new Tensor(this.inputs.data, [1, this.inputSize]);
-        const weightGrad = deltasColumn.matmul(inputsRow);
+
+        const VECTOR_DIMS = 1;
+        if (this.inputs.shape.length === VECTOR_DIMS) {
+            this.inputs.reshapes(VECTOR_DIMS, this.inputSize);
+        }
+        const deltasCol = new Tensor(deltas.data, deltas.shape);
+        if (deltasCol.shape.length === VECTOR_DIMS) {
+            deltasCol.reshapes(this.outputSize, VECTOR_DIMS);
+        }
+
+        const weightGrad = deltasCol.matmul(this.inputs);
         gradWeights.adds(weightGrad);
         gradBiases.adds(deltas);
     }
 
     public forward(inputs: Tensor): Tensor {
-        return this.compute(inputs);
+        this.inputs = new Tensor(inputs.data, inputs.shape);
+        return this.compute();
     }
 
     public backward(errors: Tensor): Tensor {

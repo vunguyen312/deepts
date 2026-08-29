@@ -70,18 +70,18 @@ test("Tensor rejects mixed scalar/array nesting", () => {
 });
 
 test("Tensor.rand returns a Tensor with the requested shape", () => {
-    const tensor = Tensor.rand([2, 3]);
+    const tensor = Tensor.rand(2, 3);
     assert.deepEqual(tensor.shape, [2, 3]);
 });
 
 test("Tensor.rand fills data with one float32 per element", () => {
-    const tensor = Tensor.rand([2, 3, 4]);
+    const tensor = Tensor.rand(2, 3, 4);
     assert.ok(tensor.data instanceof Float32Array);
     assert.equal(tensor.data.length, 2 * 3 * 4);
 });
 
 test("Tensor.rand elements are finite and within float32 [0, 1]", () => {
-    const tensor = Tensor.rand([10, 10]);
+    const tensor = Tensor.rand(10, 10);
     for (const element of tensor.data) {
         assert.ok(Number.isFinite(element), `value ${element} is not finite`);
         assert.ok(element >= 0 && element <= 1, 
@@ -89,14 +89,14 @@ test("Tensor.rand elements are finite and within float32 [0, 1]", () => {
     }
 });
 test("Tensor.xavier returns a Tensor with the requested shape", () => {
-    const tensor = Tensor.xavier([2, 3], 2, 3);
+    const tensor = Tensor.xavier(2, 3, 2, 3);
     assert.deepEqual(tensor.shape, [2, 3]);
     assert.deepEqual(tensor.strides, [3, 1]);
 });
 
 test("Tensor.xavier bounds values by the fan-in/fan-out limit", () => {
     const limit = Math.sqrt(6 / (2 + 3));
-    const tensor = Tensor.xavier([2, 3], 2, 3);
+    const tensor = Tensor.xavier(2, 3, 2, 3);
     for (const element of tensor.data) {
         assert.ok(Number.isFinite(element), `value ${element} is not finite`);
         assert.ok(element >= -limit && element <= limit,
@@ -105,13 +105,13 @@ test("Tensor.xavier bounds values by the fan-in/fan-out limit", () => {
 });
 
 test("Tensor.rand computes row-major strides", () => {
-    const tensor = Tensor.rand([2, 3, 4]);
+    const tensor = Tensor.rand(2, 3, 4);
     assert.deepEqual(tensor.strides, [12, 4, 1]);
 });
 
 test("Tensor.rand draws differ across calls", () => {
-    const tensorA = Tensor.rand([100]).data;
-    const tensorB = Tensor.rand([100]).data;
+    const tensorA = Tensor.rand(100).data;
+    const tensorB = Tensor.rand(100).data;
     let sawDifference = false;
     for (let i = 0; i < tensorA.length; i++) {
         if (tensorA[i] !== tensorB[i]) {
@@ -123,25 +123,25 @@ test("Tensor.rand draws differ across calls", () => {
 });
 
 test("Tensor.zeros returns a Tensor with the requested shape", () => {
-    const tensor = Tensor.zeros([2, 3]);
+    const tensor = Tensor.zeros(2, 3);
     assert.deepEqual(tensor.shape, [2, 3]);
 });
 
 test("Tensor.zeros fills data with one float32 per element", () => {
-    const tensor = Tensor.zeros([2, 3, 4]);
+    const tensor = Tensor.zeros(2, 3, 4);
     assert.ok(tensor.data instanceof Float32Array);
     assert.equal(tensor.data.length, 2 * 3 * 4);
 });
 
 test("Tensor.zeros elements are zero", () => {
-    const tensor = Tensor.zeros([10, 10]);
+    const tensor = Tensor.zeros(10, 10);
     for (const element of tensor.data) {
         assert.ok(element === 0, `value ${element} is non-zero`);
     }
 });
 
 test("Tensor.zero sets all elements to zero inplace", () => {
-    const tensor = Tensor.rand([10, 10]);
+    const tensor = Tensor.rand(10, 10);
     tensor.zero();
     for (const element of tensor.data) {
         assert.ok(element === 0, `value ${element} is non-zero`);
@@ -173,7 +173,7 @@ test("Tensor.dot rejects vectors of mismatched lengths", () => {
             const vec2 = new Tensor([4, 5, 6, 7]);
             vec1.dot(vec2);
         },
-        /same dimension/
+        /same shape/
     );
 });
 
@@ -404,4 +404,30 @@ test("Tensor.transpose into Transor.matmul produces correct tensor", () => {
     assert.deepEqual(result.data, new Float32Array([15, 7, 36, -3]));
     assert.deepEqual(result.shape, [2, 2]);
     assert.deepEqual(result.strides, [2, 1]);
+});
+
+test("Tensor.reshapes reassigns a Tensor's shape array", () => {
+    const tensor1 = new Tensor([[[1, 2], [1, 2]], [[4, 2], [5, 2]]]);
+    tensor1.reshapes(8);
+    assert.deepEqual(tensor1.shape, [8]);
+    assert.deepEqual(tensor1.strides, [1]);
+});
+
+test("Tensor.reshapes rejects invalid shapes for a given Tensor", () => {
+    assert.throws(
+        () => {
+            const tensor1 = new Tensor([[[1, 2], [1, 2]], [[4, 2], [5, 2]]]);
+            tensor1.reshapes(7);
+        },
+        /requires 7/
+    )
+});
+
+test("Tensor.reshapes creates new Tensor with given data and shape", () => {
+    const tensor1 = new Tensor([[[1, 2], [1, 2]], [[4, 2], [5, 2]]]);
+    const result = tensor1.reshape(8);
+    assert.deepEqual(tensor1.shape, [2, 2, 2]);
+    assert.deepEqual(tensor1.strides, [4, 2, 1]);
+    assert.deepEqual(result.shape, [8]);
+    assert.deepEqual(result.strides, [1]);
 });
