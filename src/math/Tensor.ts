@@ -151,30 +151,6 @@ export class Tensor {
         return new Tensor(data, shape);
     }
 
-    private static broadcast(tensor1: Tensor, tensor2: Tensor): number[] {
-        /* Very tired for today so I will note how broadcasting works.
-           Libs like PyTorch DO NOT create another Tensor in memory to broadcast.
-           They instead virtualize expansion by setting the strides of expanding dimensions to 0.
-           For two tensors to be broadcastable, they must be EITHER: Equal in shapes, missing one dimensions
-           compared to the other, or has dimensions of size 1. Take for example the tensors (3, 3) and (3, 1)
-           We modify the second one's stride, the Y stride to 0. This will also require refactoring adds, muls,
-           and subs
-           */
-        let largerTensor = tensor1;
-        let smallerTensor = tensor2;
-        if (tensor1.shape.length < tensor2.shape.length) {
-            largerTensor = tensor2;
-            smallerTensor = tensor1;
-        }
-        const largerTensorLen = largerTensor.shape.length;
-        const smallerTensorLen = smallerTensor.shape.length;
-        const dimensionsToFill = largerTensorLen - smallerTensorLen;
-        const UNIT_DIMS = 1;
-        const newShape = new Array(dimensionsToFill).fill(UNIT_DIMS);
-
-        return [1, 2];
-    }
-
     public dot(tensor: Tensor): Tensor {
         const VECTOR_DIMS = 1;
         assertDims(this, "dot", VECTOR_DIMS);
