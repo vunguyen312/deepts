@@ -416,6 +416,14 @@ test("Tensor.reshapes reassigns a Tensor's shape array 2", () => {
     assert.deepEqual(tensor1.strides, [3, 1]);
 });
 
+test("Tensor.reshapes reassigns a Tensor's shape array 2", () => {
+    const tensor1 = new Tensor([[[[1]]]]);
+    tensor1.reshapes(1);
+    assert.deepEqual(tensor1.shape, [1]);
+    assert.deepEqual(tensor1.strides, [1]);
+});
+
+
 test("Tensor.reshapes rejects invalid shapes for a given Tensor", () => {
     assert.throws(
         () => {
