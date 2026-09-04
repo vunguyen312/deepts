@@ -2,6 +2,7 @@
 
 type NestedNumberArray = number | NestedNumberArray[];
 type Transformer<T, R> = (input: T) => R;
+type BinaryOp = (a: number, b: number) => number;
 
 const assertValidShape = (dataLength: number, shape: number[]): void => {
     let totalElements = 1;
@@ -38,20 +39,22 @@ const assertDims = (tensor: Tensor, op: string,
     );
 }
 
-const assertSameShape = (tensor1: Tensor, tensor2: Tensor): void => {
+const assertSameShape = (a: Tensor | number[], b: Tensor | number[]): void => {
     let matchesDims = true;
-    for (let i = 0; i < tensor1.shape.length; i++) {
-        if (tensor1.shape[i] !== tensor2.shape[i]) {
+    const shapeA = Array.isArray(a) ? a : a.shape;
+    const shapeB = Array.isArray(b) ? b : b.shape;
+    for (let i = 0; i < shapeA.length; i++) {
+        if (shapeA[i] !== shapeB[i]) {
             matchesDims = false;
         }
     }
 
-    if (tensor1.shape.length === tensor2.shape.length && matchesDims) {
+    if (shapeA.length === shapeB.length && matchesDims) {
         return;
     }
     throw new Error(
         `Tensors must be of the same shape, given ` + 
-        `${tensor1.shape} and ${tensor2.shape}`
+        `${shapeA} and ${shapeB}`
     );
 }
 
@@ -151,6 +154,60 @@ export class Tensor {
         return new Tensor(data, shape);
     }
 
+    private static broadcastShape(tensorA: Tensor, tensorB: Tensor): number[] {
+        const UNIT_DIMS = 1;
+        const { length: lengthA } = tensorA.shape;
+        const { length: lengthB } = tensorB.shape;
+        const newShapeLen = Math.max(lengthA, lengthB);
+        const newShape = new Array(newShapeLen);
+
+        const fillAEndIndex = newShapeLen - lengthA;
+        const fillBEndIndex = newShapeLen - lengthB;
+        const { shape: shapeA } = tensorA;
+        const { shape: shapeB } = tensorB;
+        for (let i = 0; i < newShapeLen; i++) {
+            const currADim = shapeA[i - fillAEndIndex];
+            const currBDim = shapeB[i - fillBEndIndex];
+            const isUnitDim = currADim === UNIT_DIMS
+                              || currBDim === UNIT_DIMS
+                              || currADim === undefined
+                              || currBDim === undefined;
+            const isDimEqual = currADim === currBDim;
+            if (isUnitDim || isDimEqual) {
+                newShape[i] = Math.max(currADim || UNIT_DIMS, 
+                                       currBDim || UNIT_DIMS);
+                continue;
+            }
+            throw Error(
+                `broadcast: Tensor shape incompatibility, given ` +
+                `${shapeA} and ${shapeB}`
+            );
+        }
+        
+        return newShape;
+    }
+
+    private static broadcast(tensorA: Tensor, tensorB: Tensor): number[] {
+        const UNIT_DIMS = 1;
+        const { length: lengthA } = tensorA.strides;
+        const { length: lengthB } = tensorB.strides;
+        const newStridesLen = Math.max(lengthA, lengthB);
+        const newStridesA = new Array(newStridesLen);
+        
+        const { shape: shapeA } = tensorA;
+        const fillAEndIndex = newStridesLen - lengthA;
+        for (let i = 0; i < newStridesA.length; i++) {
+            const currDim = shapeA[i - fillAEndIndex];
+            if (i < fillAEndIndex || currDim === UNIT_DIMS) {
+                newStridesA[i] = 0;
+                continue;
+            }
+            newStridesA[i] = tensorA.strides[i - fillAEndIndex];
+        }
+
+        return newStridesA;
+    }
+
     public dot(tensor: Tensor): Tensor {
         const VECTOR_DIMS = 1;
         assertDims(this, "dot", VECTOR_DIMS);
@@ -161,6 +218,23 @@ export class Tensor {
             result[0] += this.data[i] * tensor.data[i];
         }
         return new Tensor(result, []);
+    }
+
+    private isContiguous(shape: number[], strides: number[]): boolean {
+        const lastStrideIndex = strides.length - 1;
+        if (strides[lastStrideIndex] !== 1) {
+            return false;
+        }
+
+        for (let i = lastStrideIndex - 1; i >= 0; i--) {
+            const currStride = strides[i];
+            const lastStride = strides[i + 1];
+            const lastDim = shape[i + 1];
+            if (currStride !== lastStride * lastDim) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public matmul(tensor: Tensor): Tensor {
@@ -202,17 +276,25 @@ export class Tensor {
         const resultRowCount = leftRowCount;
         const resultColCount = rightColCount;
         const resultData = new Float32Array(resultRowCount * resultColCount);
+        const leftStrides = leftDims === VECTOR_DIMS
+            ? [0, this._strides[0]]
+            : this._strides;
+        const rightStrides = rightDims === VECTOR_DIMS
+            ? [tensor.strides[0], 0]
+            : tensor.strides;
         for (let i = 0; i < resultRowCount; i++) {
             for (let j = 0; j < resultColCount; j++) {
                 let sum = 0;
                 for (let k = 0; k < leftColCount; k++) {
-                    sum += this.data[i * leftColCount + k] *
-                           tensor.data[k * rightColCount + j];
+                    const leftOffset = i * leftStrides[0] + k * leftStrides[1];
+                    const rightOffset = k * rightStrides[0] 
+                        + j * rightStrides[1];
+                    sum += this.data[leftOffset] * tensor.data[rightOffset];
                 }
                 resultData[i * resultColCount + j] = sum;
             }
         }
-
+        
         const resultShape = leftDims === VECTOR_DIMS 
                             || rightDims === VECTOR_DIMS
             ? [resultRowCount * resultColCount]
@@ -220,43 +302,104 @@ export class Tensor {
         return new Tensor(resultData, resultShape);
     }
 
-    public muls(tensor: Tensor): void {
-        assertSameShape(this, tensor);
-        for (let i = 0; i < this.data.length; i++) {
-            this.data[i] *= tensor.data[i];
+    private static elementWiseWalk(dim: number, shape: number[],
+                                   tensorA: Tensor, tensorB: Tensor,
+                                   stridesA: number[], stridesB: number[],
+                                   destData: Float32Array,
+                                   destStrides: number[],
+                                   offsetA: number, offsetB: number,
+                                   offsetDest: number,
+                                   op: BinaryOp): void {
+        if (dim === shape.length) {
+            destData[offsetDest] = op(tensorA.data[offsetA],
+                                      tensorB.data[offsetB]);
+            return;
         }
+
+        for (let i = 0; i < shape[dim]; i++) {
+            const nextDim = dim + 1;
+            const newOffsetA = offsetA + i * stridesA[dim];
+            const newOffsetB = offsetB + i * stridesB[dim];
+            const newOffsetDest = offsetDest + i * destStrides[dim];
+            Tensor.elementWiseWalk(nextDim, shape, tensorA, tensorB,
+                                   stridesA, stridesB, destData, destStrides,
+                                   newOffsetA, newOffsetB, newOffsetDest, op);
+        }
+    }
+
+    private static elementWiseApply(tensorA: Tensor, tensorB: Tensor,
+                                    op: BinaryOp): Tensor {
+        const outputShape = Tensor.broadcastShape(tensorA, tensorB);
+        const totalElements = outputShape.reduce((acc, curr) => acc * curr, 1);
+        const resultData = new Float32Array(totalElements);
+        const result = new Tensor(resultData, outputShape);
+        const stridesA = Tensor.broadcast(tensorA, tensorB);
+        const stridesB = Tensor.broadcast(tensorB, tensorA);
+
+        const isAContiguous = tensorA.isContiguous(tensorA.shape, stridesA);
+        const isBContiguous = tensorB.isContiguous(tensorB.shape, stridesB);
+        if (isAContiguous && isBContiguous) {
+            for (let i = 0; i < totalElements; i++) {
+                result.data[i] = op(tensorA.data[i], tensorB.data[i]);
+            }
+            return result;
+        }
+
+        const FIRST_DIM_INDEX = 0;
+        const INITIAL_OFFSET = 0;
+        Tensor.elementWiseWalk(FIRST_DIM_INDEX, outputShape, tensorA, tensorB,
+                               stridesA, stridesB, result.data,
+                               result.strides, INITIAL_OFFSET, INITIAL_OFFSET,
+                               INITIAL_OFFSET, op);
+        return result;
+    }
+
+    private elementWiseInPlace(tensor: Tensor, op: BinaryOp): void {
+        const outputShape = Tensor.broadcastShape(this, tensor);
+        assertSameShape(outputShape, this._shape);
+
+        const stridesA = Tensor.broadcast(this, tensor);
+        const stridesB = Tensor.broadcast(tensor, this);
+
+        const isAContiguous = this.isContiguous(this._shape, stridesA);
+        const isBContiguous = this.isContiguous(tensor.shape, stridesB);
+        if (isAContiguous && isBContiguous) {
+            for (let i = 0; i < this.data.length; i++) {
+                this.data[i] = op(this.data[i], tensor.data[i]);
+            }
+            return;
+        }
+
+        const FIRST_DIM_INDEX = 0;
+        const INITIAL_OFFSET = 0;
+        Tensor.elementWiseWalk(FIRST_DIM_INDEX, outputShape, this, tensor,
+                               stridesA, stridesB, this.data, stridesA,
+                               INITIAL_OFFSET, INITIAL_OFFSET,
+                               INITIAL_OFFSET, op);
+    }
+
+    public muls(tensor: Tensor): void {
+        this.elementWiseInPlace(tensor, (a, b) => a * b);
     }
 
     public mul(tensor: Tensor): Tensor {
-        const result = new Tensor(this.data, this._shape);
-        result.muls(tensor);
-        return result;
+        return Tensor.elementWiseApply(this, tensor, (a, b) => a * b);
     }
 
     public adds(tensor: Tensor): void {
-        assertSameShape(this, tensor);
-        for (let i = 0; i < this.data.length; i++) {
-            this.data[i] += tensor.data[i];
-        }
+        this.elementWiseInPlace(tensor, (a, b) => a + b);
     }
 
     public add(tensor: Tensor): Tensor {
-        const result = new Tensor(this.data, this._shape);
-        result.adds(tensor);
-        return result;
+        return Tensor.elementWiseApply(this, tensor, (a, b) => a + b);
     }
 
     public subs(tensor: Tensor): void {
-        assertSameShape(this, tensor);
-        for (let i = 0; i < this.data.length; i++) {
-            this.data[i] -= tensor.data[i];
-        }
+        this.elementWiseInPlace(tensor, (a, b) => a - b);
     }
 
     public sub(tensor: Tensor): Tensor {
-        const result = new Tensor(this.data, this._shape);
-        result.subs(tensor);
-        return result;
+        return Tensor.elementWiseApply(this, tensor, (a, b) => a - b);
     }
 
     public scales(factor: number): void {
@@ -283,59 +426,41 @@ export class Tensor {
         return result;
     }
 
-    public transposes(dim1?: number, dim2?: number): void {
+    public transposes(dimA?: number, dimB?: number): void {
         const MATRIX_DIMS = 2;
         if (this._shape.length < MATRIX_DIMS) {
             throw new Error("transpose: Cannot transpose below 2D");
         }
 
-        if (dim1 === undefined && dim2 === undefined
+        if (dimA === undefined && dimB === undefined
             && this._shape.length === MATRIX_DIMS) {
             this.transposes(0, 1);
             return;
         }
 
-        if (dim1 === undefined || dim2 === undefined) {
+        if (dimA === undefined || dimB === undefined) {
             throw new Error("transpose: Must provide two dimensions to swap");
         }
 
         const MIN_INDEX = 0;
         const MAX_INDEX = this._shape.length - 1;
-        if (dim1 < MIN_INDEX || dim2 < MIN_INDEX 
-            || dim1 > MAX_INDEX || dim2 > MAX_INDEX) {
-            throw new Error(
-                `transpose: Expected indices ` +
-                `0 <= x <= ${MAX_INDEX}, ` +
-                `given ${dim1} and ${dim2}` 
-            );
-        }
+        const isDim1ValidIndex = dimA >= MIN_INDEX && dimA <= MAX_INDEX;
+        const isDim2ValidIndex = dimB >= MIN_INDEX && dimB <= MAX_INDEX;
+        if (isDim1ValidIndex && isDim2ValidIndex) {
+            const tempDim = this._shape[dimA];
+            this._shape[dimA] = this._shape[dimB];
+            this._shape[dimB] = tempDim;
 
-        const oldShape = [...this._shape];
-        const oldStrides = [...this.strides];
-        this._shape[dim1] = oldShape[dim2];
-        this._shape[dim2] = oldShape[dim1];
-        const newStrides = this.calcStrides();
-        const newData = new Float32Array(this.data.length);
-        for (let i = 0; i < newData.length; i++) {
-            let remaining = i;
-            let oldOffset = 0;
-            for (let j = 0; j < this._shape.length; j++) {
-                const coord = Math.floor(remaining / newStrides[j]);
-                remaining %= newStrides[j];
-                let oldDim = j;
-                if (j === dim1) {
-                    oldDim = dim2;
-                }
-                if (j === dim2) {
-                    oldDim = dim1;
-                }
-                oldOffset += coord * oldStrides[oldDim];
-            }
-            newData[i] = this.data[oldOffset];
+            const tempStride = this._strides[dimA];
+            this._strides[dimA] = this._strides[dimB];
+            this._strides[dimB] = tempStride;
+            return;
         }
-    
-    this.data = newData;
-    this._strides = newStrides;
+        throw new Error(
+            `transpose: Expected indices ` +
+            `0 <= x <= ${MAX_INDEX}, ` +
+            `given ${dimA} and ${dimB}` 
+        );
     }
 
     public transpose(): Tensor {

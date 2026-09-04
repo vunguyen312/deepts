@@ -82,19 +82,12 @@ const network = createNetwork(
 );
 const optimizer = new SGD(network.params, 0.4);
 
-const in1 = new Tensor([1, 0]);
-const in2 = new Tensor([0, 0]);
-const in3 = new Tensor([1, 1]);
-const in4 = new Tensor([0, 1]);
-const ex1 = new Tensor([1]);
-const ex2 = new Tensor([0]);
+const input = new Tensor([[1, 0], [0, 0], [1, 1], [0, 1]]);
+const expected = new Tensor([[1], [0], [0], [1]]);
 
 for (let epoch = 0; epoch < NUM_EPOCHS; epoch++) {
     optimizer.zeroGrad();
-    network.backward(in1, ex1);
-    network.backward(in2, ex2);
-    network.backward(in3, ex2);
-    network.backward(in4, ex1);
+    network.backward(input, expected);
     optimizer.step();
 }
 

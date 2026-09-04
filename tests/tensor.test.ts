@@ -393,14 +393,45 @@ test("Tensor.transposes transposes a given tensor returns a new tensor", () => {
     assert.deepEqual(result.strides, [1, 3]);
 });
 
-/*test("Tensor.transpose into Transor.matmul produces correct tensor", () => {
+test("Tensor.matmul multiplies a transposed matrix by a matrix", () => {
     const mat1 = new Tensor([[-1, 2], [4, 3]]);
     const mat2 = new Tensor([[9, -3], [6, 1]]);
     mat1.transposes();
     const result = mat1.matmul(mat2);
+    assert.deepEqual(result.data, new Float32Array([15, 7, 36, -3]));
     assert.deepEqual(result.shape, [2, 2]);
-    assert.deepEqual(result.strides, [1, 2]);
-});*/
+    assert.deepEqual(result.strides, [2, 1]);
+});
+
+test("Tensor.matmul multiplies a matrix by a transposed matrix", () => {
+    const mat1 = new Tensor([[1, 2, 3], [4, 5, 6]]);
+    const mat2 = new Tensor([[7, 8, 9], [10, 11, 12]]);
+    mat2.transposes();
+    const result = mat1.matmul(mat2);
+    assert.deepEqual(result.data, new Float32Array([50, 68, 122, 167]));
+    assert.deepEqual(result.shape, [2, 2]);
+    assert.deepEqual(result.strides, [2, 1]);
+});
+
+test("Tensor.matmul multiplies a transposed matrix by a column vector", () => {
+    const mat1 = new Tensor([[1, 2], [3, 4]]);
+    mat1.transposes();
+    const vec = new Tensor([5, 6]);
+    const result = mat1.matmul(vec);
+    assert.deepEqual(result.data, new Float32Array([23, 34]));
+    assert.deepEqual(result.shape, [2]);
+    assert.deepEqual(result.strides, [1]);
+});
+
+test("Tensor.matmul multiplies a row vector by a transposed matrix", () => {
+    const vec = new Tensor([5, 6]);
+    const mat = new Tensor([[1, 2], [3, 4]]);
+    mat.transposes();
+    const result = vec.matmul(mat);
+    assert.deepEqual(result.data, new Float32Array([17, 39]));
+    assert.deepEqual(result.shape, [2]);
+    assert.deepEqual(result.strides, [1]);
+});
 
 test("Tensor.reshapes reassigns a Tensor's shape array", () => {
     const tensor1 = new Tensor([[[1, 2], [1, 2]], [[4, 2], [5, 2]]]);
@@ -456,4 +487,81 @@ test("Tensor.broadcast properly expands two Tensors to add", () => {
     const tensor2 = new Tensor([1]);
     tensor1.adds(tensor2);
     assert.deepEqual(tensor1.data, new Float32Array([2, 3, 4]));
+});
+
+test("Tensor.broadcast properly expands a scalar to add", () => {
+    const tensor1 = new Tensor([1, 2, 3]);
+    const tensor2 = new Tensor(4);
+    tensor1.adds(tensor2);
+    assert.deepEqual(tensor1.data, new Float32Array([5, 6, 7]));
+});
+
+test("Tensor.broadcast fails to expand incompatible dimensions", () => {
+    assert.throws(
+        () => {
+            const tensor1 = new Tensor([1, 2, 3]);
+            const tensor2 = new Tensor([1, 2]);
+            tensor1.adds(tensor2);
+        },
+        /broadcast:/
+    );
+});
+
+test("Tensor.muls broadcasts a rank-shorter unit tensor over all elements", () => {
+    const tensor = new Tensor([[1, 2, 3, 4], [5, 6, 7, 8]]);
+    tensor.muls(new Tensor([2]));
+    assert.deepEqual(
+        tensor.data,
+        new Float32Array([2, 4, 6, 8, 10, 12, 14, 16])
+    );
+});
+
+test("Tensor.adds broadcasts a bias row over batch rows", () => {
+    const tensor = new Tensor([[1, 2], [3, 4]]);
+    tensor.adds(new Tensor([10, 20]));
+    assert.deepEqual(tensor.data, new Float32Array([11, 22, 13, 24]));
+});
+
+test("Tensor.muls broadcasts matching shapes that share no extent", () => {
+    const tensor = new Tensor([[1, 2, 3, 4]]);
+    tensor.muls(new Tensor([2, 4, 6, 8]));
+    assert.deepEqual(tensor.data, new Float32Array([2, 8, 18, 32]));
+});
+
+test("Tensor.mul broadcasts to a larger result shape", () => {
+    const left = new Tensor([[1], [2]]);
+    const right = new Tensor([10, 20, 30]);
+    const result = left.mul(right);
+    assert.deepEqual(result.shape, [2, 3]);
+    assert.deepEqual(
+        result.data,
+        new Float32Array([10, 20, 30, 20, 40, 60])
+    );
+
+    const reversed = new Tensor([1, 2, 3]).add(new Tensor([[10], [20]]));
+    assert.deepEqual(reversed.shape, [2, 3]);
+    assert.deepEqual(reversed.data, new Float32Array([11, 12, 13, 21, 22, 23]));
+});
+
+test("Tensor.mul broadcasts over higher-rank operands", () => {
+    const tensorA = new Tensor([[[1], [2]]]);
+    const tensorB = new Tensor([[[1, 2, 3]], [[4, 5, 6]]]);
+    const result = tensorA.mul(tensorB);
+    assert.deepEqual(result.shape, [2, 2, 3]);
+    assert.deepEqual(
+        result.data,
+        new Float32Array([1, 2, 3, 2, 4, 6, 4, 5, 6, 8, 10, 12])
+    );
+});
+
+test("Tensor.adds rejects in-place broadcasts that would expand the target", () => {
+    const tensor = new Tensor([[1], [2], [3]]);
+    assert.throws(
+        () => tensor.adds(new Tensor([10, 20, 30])),
+        /same shape/
+    );
+    assert.throws(
+        () => tensor.muls(new Tensor([[10, 20], [30, 40]])),
+        /broadcast:/
+    );
 });

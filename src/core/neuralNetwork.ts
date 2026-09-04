@@ -92,14 +92,15 @@ export class Layer {
         if (this.inputs.shape.length === VECTOR_DIMS) {
             this.inputs.reshapes(VECTOR_DIMS, this.inputSize);
         }
-        const deltasCol = new Tensor(deltas.data, deltas.shape);
-        if (deltasCol.shape.length === VECTOR_DIMS) {
-            deltasCol.reshapes(this.outputSize, VECTOR_DIMS);
+        const deltasMat = new Tensor(deltas.data, deltas.shape);
+        if (deltasMat.shape.length === VECTOR_DIMS) {
+            deltasMat.reshapes(VECTOR_DIMS, this.outputSize);
         }
 
+        const deltasCol = deltasMat.transpose();
         const weightGrad = deltasCol.matmul(this.inputs);
         gradWeights.adds(weightGrad);
-        gradBiases.adds(deltas);
+        this.params.gradBiases = gradBiases.add(deltas);
     }
 
     public forward(inputs: Tensor): Tensor {
