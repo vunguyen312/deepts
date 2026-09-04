@@ -85,22 +85,30 @@ export class Layer {
         return computedResult;
     }
 
+    private accumulateGradBiases(deltas: Tensor): void {
+        const { gradBiases } = this.params;
+        const deltasSize = deltas.shape[1];
+        for (let i = 0; i < deltas.data.length; i++) {
+            gradBiases.data[i % deltasSize] += deltas.data[i];
+        } 
+    }
+
     private accumulateGrad(deltas: Tensor): void {
-        const { gradWeights, gradBiases } = this.params;
+        const { gradWeights } = this.params;
 
         const VECTOR_DIMS = 1;
         if (this.inputs.shape.length === VECTOR_DIMS) {
             this.inputs.reshapes(VECTOR_DIMS, this.inputSize);
         }
-        const deltasMat = new Tensor(deltas.data, deltas.shape);
-        if (deltasMat.shape.length === VECTOR_DIMS) {
-            deltasMat.reshapes(VECTOR_DIMS, this.outputSize);
+        const deltasCol = new Tensor(deltas.data, deltas.shape);
+        if (deltasCol.shape.length === VECTOR_DIMS) {
+            deltasCol.reshapes(VECTOR_DIMS, this.outputSize);
         }
 
-        const deltasCol = deltasMat.transpose();
+        deltasCol.transposes();
         const weightGrad = deltasCol.matmul(this.inputs);
         gradWeights.adds(weightGrad);
-        this.params.gradBiases = gradBiases.add(deltas);
+        this.accumulateGradBiases(deltas);
     }
 
     public forward(inputs: Tensor): Tensor {
