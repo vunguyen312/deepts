@@ -87,7 +87,7 @@ export class Layer {
 
     private accumulateGradBiases(deltas: Tensor): void {
         const { gradBiases } = this.params;
-        const deltasSize = deltas.shape[1];
+        const deltasSize = deltas.shape[0];
         for (let i = 0; i < deltas.data.length; i++) {
             gradBiases.data[i % deltasSize] += deltas.data[i];
         } 
@@ -108,7 +108,7 @@ export class Layer {
         deltasCol.transposes();
         const weightGrad = deltasCol.matmul(this.inputs);
         gradWeights.adds(weightGrad);
-        this.accumulateGradBiases(deltas);
+        this.accumulateGradBiases(deltasCol);
     }
 
     public forward(inputs: Tensor): Tensor {
