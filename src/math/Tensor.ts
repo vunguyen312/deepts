@@ -1,7 +1,7 @@
 // Waterloo MATH136 trauma #thosewhoknow
 
 type NestedNumberArray = number | NestedNumberArray[];
-type Transformer<T, R> = (input: T) => R;
+type Transformer<T, L, R> = (input: T, index: L) => R;
 type BinaryOp = (a: number, b: number) => number;
 
 const assertValidShape = (dataLength: number, shape: number[]): void => {
@@ -414,13 +414,13 @@ export class Tensor {
         return result;
     }
     
-    public maps(callback: Transformer<number, number>): void {
+    public maps(callback: Transformer<number, number, number>): void {
         for (let i = 0; i < this.data.length; i++) {
-            this.data[i] = callback(this.data[i]);
+            this.data[i] = callback(this.data[i], i);
         }
     }
 
-    public map(callback: Transformer<number, number>): Tensor {
+    public map(callback: Transformer<number, number, number>): Tensor {
         const result = new Tensor(this.data, this._shape);
         result.maps(callback);
         return result;

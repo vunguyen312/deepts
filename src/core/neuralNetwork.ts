@@ -87,9 +87,9 @@ export class Layer {
 
     private accumulateGradBiases(deltas: Tensor): void {
         const { gradBiases } = this.params;
-        const deltasSize = deltas.shape[0];
+        const colSize = deltas.shape[0];
         for (let i = 0; i < deltas.data.length; i++) {
-            gradBiases.data[i % deltasSize] += deltas.data[i];
+            gradBiases.data[i % colSize] += deltas.data[i];
         } 
     }
 
@@ -176,7 +176,7 @@ export class NeuralNetwork {
         };
     }
 
-    get params(): Parameters[] {
+    public get params(): Parameters[] {
         const result: Parameters[] = [];
         for (const layer of this.layers) {
             const params = layer.getParams;

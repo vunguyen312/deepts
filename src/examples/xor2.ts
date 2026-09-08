@@ -11,7 +11,7 @@ const network = createNetwork(
         new Layer("sigmoid", 3, 1)
     ]
 );
-const optimizer = new SGD(network.params, 0.4);
+const optimizer = new SGD(network.params, 0.4, 0.9);
 
 const input = new Tensor([[1, 0], [0, 0], [1, 1], [0, 1]]);
 const expected = new Tensor([[1], [0], [0], [1]]);
