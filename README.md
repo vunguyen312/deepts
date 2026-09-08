@@ -73,6 +73,8 @@ import { Layer } from "../core/neuralNetwork";
 import { SGD } from "../core/optimizer";
 
 const NUM_EPOCHS = 20000;
+const LEARNING_RATE = 0.4;
+const MOMENTUM = 0.9;
 
 const network = createNetwork(
     [
@@ -80,7 +82,7 @@ const network = createNetwork(
         new Layer("sigmoid", 3, 1)
     ]
 );
-const optimizer = new SGD(network.params, 0.4);
+const optimizer = new SGD(network.params, LEARNING_RATE, MOMENTUM);
 
 const input = new Tensor([[1, 0], [0, 0], [1, 1], [0, 1]]);
 const expected = new Tensor([[1], [0], [0], [1]]);

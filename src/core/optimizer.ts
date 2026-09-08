@@ -28,8 +28,8 @@ export class SGD extends Optimizer {
     constructor(networkParams: Parameters[], learningRate: number, 
                 momentum?: number) {
         super(networkParams, learningRate);
-        const DISABLED_MOMENTUM = 0;
-        this.momentum = momentum ?? DISABLED_MOMENTUM;
+        const DEFAULT_MOMENTUM = 0;
+        this.momentum = momentum ?? DEFAULT_MOMENTUM;
         this.weightVelocities = new Array(networkParams.length);
         this.biasVelocities = new Array(networkParams.length);
         this.initializeVelocities();
