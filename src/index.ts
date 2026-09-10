@@ -1,8 +1,10 @@
 export * from "./core/networkController";
 export { Tensor } from "./math/Tensor";
-export { Layer, NeuralNetwork } from "./core/neuralNetwork";
+export { NeuralNetwork } from "./core/neuralNetwork";
 export { SGD } from "./core/optimizer";
 export { MNISTParser } from "./utils/MNISTParser";
+export { LinearLayer } from "./core/layers";
+export { Step, ReLU, Sigmoid, Tanh, Softplus } from "./math/activations";
 
 import "./examples/xor2";
 // import "./examples/mnist";

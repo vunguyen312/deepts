@@ -1,4 +1,4 @@
-import { Parameters } from "./neuralNetwork";
+import { Parameters } from "./layers";
 import { Tensor } from "../math/Tensor";
 
 export abstract class Optimizer {

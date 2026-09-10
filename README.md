@@ -69,17 +69,20 @@ Below is an example of a small 3-layer neural network trained to solve the XOR p
 ```typescript
 import { Tensor } from "../math/Tensor";
 import { createNetwork, freezeToJSON } from "../core/networkController";
-import { Layer } from "../core/neuralNetwork";
+import { LinearLayer } from "../core/layers";
 import { SGD } from "../core/optimizer";
+import { Sigmoid, Softplus } from "../math/activations";
 
-const NUM_EPOCHS = 20000;
+const NUM_EPOCHS = 2000;
 const LEARNING_RATE = 0.4;
 const MOMENTUM = 0.9;
 
 const network = createNetwork(
     [
-        new Layer("relu", 2, 3), 
-        new Layer("sigmoid", 3, 1)
+        new LinearLayer(2, 3),
+        new Softplus(),
+        new LinearLayer(3, 1)
+        new Sigmoid()
     ]
 );
 const optimizer = new SGD(network.params, LEARNING_RATE, MOMENTUM);
@@ -101,17 +104,20 @@ Below is an example of a network trained on the MNIST dataset
 ```typescript
 import { join } from "node:path";
 import { createNetwork, freezeToJSON } from "../core/networkController";
-import { Layer } from "../core/neuralNetwork";
+import { LinearLayer } from "../core/layers";
 import { SGD } from "../core/optimizer";
 import { MNISTParser } from "../utils/MNISTParser";
+import { Sigmoid, ReLU } from "../math/activations";
 
 const BATCH_SIZE = 64;
 const NUM_EPOCHS = 30;
 
 const network = createNetwork(
     [
-        new Layer("relu", 784, 30),
-        new Layer("sigmoid", 30, 10)
+        new LinearLayer(784, 30),
+        new ReLU(),
+        new LinearLayer(30, 10),
+        new Sigmoid()
     ]
 );
 const optimizer = new SGD(network.params, 0.00625);
