@@ -111,6 +111,8 @@ import { Sigmoid, ReLU } from "../math/activations";
 
 const BATCH_SIZE = 64;
 const NUM_EPOCHS = 30;
+const LEARNING_RATE = 0.00625;
+const MOMENTUM = 0.9;
 
 const network = createNetwork(
     [
@@ -120,7 +122,7 @@ const network = createNetwork(
         new Sigmoid()
     ]
 );
-const optimizer = new SGD(network.params, 0.00625);
+const optimizer = new SGD(network.params, LEARNING_RATE, MOMENTUM);
 
 const trainingSet = new MNISTParser(
     join(__dirname, "../data/train-images.idx3-ubyte"),

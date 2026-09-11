@@ -21,6 +21,7 @@ export abstract class Optimizer {
 }
 
 export class SGD extends Optimizer {
+    private readonly DEFAULT_MOMENTUM;
     private readonly momentum: number;
     private weightVelocities: Tensor[];
     private biasVelocities: Tensor[];
@@ -28,8 +29,8 @@ export class SGD extends Optimizer {
     constructor(networkParams: Parameters[], learningRate: number, 
                 momentum?: number) {
         super(networkParams, learningRate);
-        const DEFAULT_MOMENTUM = 0;
-        this.momentum = momentum ?? DEFAULT_MOMENTUM;
+        this.DEFAULT_MOMENTUM = 0;
+        this.momentum = momentum ?? this.DEFAULT_MOMENTUM;
         this.weightVelocities = new Array(networkParams.length);
         this.biasVelocities = new Array(networkParams.length);
         this.initializeVelocities();
@@ -54,7 +55,23 @@ export class SGD extends Optimizer {
         );
     }
 
+    private stepWithoutMomentum(params: Parameters): void {
+        const { gradWeights, gradBiases } = params;
+        params.weights.maps((element, i) => 
+            element + this.learningRate * gradWeights.data[i]
+        );
+        
+        params.biases.maps((element, i) => 
+            element + this.learningRate * gradBiases.data[i]
+        );
+    }
+
     private stepParams(params: Parameters, index: number): void {
+        if (this.momentum === this.DEFAULT_MOMENTUM) {
+            this.stepWithoutMomentum(params);
+            return;
+        }
+
         this.updateVelocities(params, index);
 
         const weightVelocity = this.weightVelocities[index];
