@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 #
-# Downloads the MNIST dataset into src/data/, and mirrors it into dist/data/
-# when a build exists. Usage: ./scripts/download-mnist.sh [--force]
+# Downloads the MNIST dataset into data/. Usage: ./scripts/download-mnist.sh [--force]
 
 set -euo pipefail
 
 BASE_URL="https://ossci-datasets.s3.amazonaws.com/mnist"
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DEST_DIR="$REPO_DIR/src/data"
+DEST_DIR="$REPO_DIR/data"
 
 FILES=(
   "train-images-idx3-ubyte.gz:train-images.idx3-ubyte"
@@ -41,9 +40,4 @@ for entry in "${FILES[@]}"; do
   echo "write $out"
 done
 
-if [[ -d "$REPO_DIR/dist" ]]; then
-  mkdir -p "$REPO_DIR/dist/data"
-  cp "$DEST_DIR"/*.idx[13]-ubyte "$REPO_DIR/dist/data/"
-fi
-
-echo "Done. MNIST data is ready in src/data/ (mirrored to dist/data/ if dist exists)"
+echo "Done. MNIST data is ready in data/"

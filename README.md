@@ -64,6 +64,14 @@ Only needed for the MNIST example; the XOR example works without it.
 
 ## Examples
 
+Runnable versions live in [`examples/`](./examples)
+
+```bash
+npm run example:xor     # XOR inference from a frozen model
+npm run example:mnist   # MNIST test-set accuracy (requires `npm run data`)
+npm run example:train   # trains the MNIST network from scratch (30 epochs)
+```
+
 ### XOR Neural Network
 Below is an example of a small 3-layer neural network trained to solve the XOR problem
 ```typescript
@@ -153,10 +161,11 @@ freezeToJSON(network, "src/weights/mnist.json");
 Below is an example of a network being loaded from a frozen model JSON file
 ```typescript
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { loadNetwork } from "../core/networkController";
 import { Tensor } from "../math/Tensor";
 
-const modelJSON = readFileSync("src/weights/xor.json", "utf-8");
+const modelJSON = readFileSync(join(__dirname, "weights/xor.json"), "utf-8");
 const modelData = JSON.parse(modelJSON);
 const network = loadNetwork(modelData);
 

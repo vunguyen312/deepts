@@ -10,6 +10,9 @@
   "scripts": {
     "test": "tsx --test tests/*.test.ts",
     "data": "bash scripts/download-mnist.sh",
+    "example:xor": "tsx examples/xor.ts",
+    "example:mnist": "tsx examples/mnist.ts",
+    "example:train": "tsx examples/mnisttrain.ts",
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js"

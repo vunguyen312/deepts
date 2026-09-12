@@ -1,7 +1,7 @@
 {
     "layers": [
         {
-            "activation": "tanh",
+            "layerType": "linear",
             "inputSize": 784,
             "outputSize": 256,
             "weights": [
@@ -200970,7 +200970,11 @@
             ]
         },
         {
-            "activation": "tanh",
+            "layerType": "activation",
+            "activation": "tanh"
+        },
+        {
+            "layerType": "linear",
             "inputSize": 256,
             "outputSize": 128,
             "weights": [
@@ -233875,7 +233879,11 @@
             ]
         },
         {
-            "activation": "sigmoid",
+            "layerType": "activation",
+            "activation": "tanh"
+        },
+        {
+            "layerType": "linear",
             "inputSize": 128,
             "outputSize": 10,
             "weights": [
@@ -235172,6 +235180,10 @@
                 0.23782029747962952,
                 0.01659446768462658
             ]
+        },
+        {
+            "layerType": "activation",
+            "activation": "sigmoid"
         }
     ]
 }

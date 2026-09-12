@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { loadNetwork } from "../core/networkController";
-import { MNISTParser } from "../utils/MNISTParser";
+import { loadNetwork, MNISTParser } from "../src/index";
 
 // Requires the dataset: run `npm run data` (or scripts/download-mnist.sh) first.
 
@@ -12,7 +11,7 @@ const testSet = new MNISTParser(
 const images = testSet.getImages();
 const labels = testSet.getLabels();
 
-const modelJSON = readFileSync("src/weights/mnist.json", "utf-8");
+const modelJSON = readFileSync(join(__dirname, "./weights/mnist.json"), "utf-8");
 const modelData = JSON.parse(modelJSON);
 const network = loadNetwork(modelData);
 

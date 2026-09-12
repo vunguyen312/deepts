@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
-import { loadNetwork } from "../core/networkController";
-import { Tensor } from "../math/Tensor";
+import { join } from "node:path";
+import { Tensor, loadNetwork } from "../src/index";
 
-const modelJSON = readFileSync("src/weights/xor.json", "utf-8");
+const modelJSON = readFileSync(join(__dirname, "./weights/xor.json"), "utf-8");
 const modelData = JSON.parse(modelJSON);
 const network = loadNetwork(modelData);
 
