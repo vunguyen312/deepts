@@ -1,21 +1,20 @@
 import { join } from "node:path";
-import { createNetwork, freezeToJSON, LinearLayer, SGD, MNISTParser, Sigmoid, 
+import { createNetwork, freezeToJSON, LinearLayer, SGD, MNISTParser, Softmax, 
          ReLU } from "../src/index";
 
 const BATCH_SIZE = 64;
 const NUM_EPOCHS = 30;
 const LEARNING_RATE = 0.00625;
-const MOMENTUM = 0.9;
 
 const network = createNetwork(
     [
         new LinearLayer(784, 30),
         new ReLU(),
         new LinearLayer(30, 10),
-        new Sigmoid()
+        new Softmax()
     ]
 );
-const optimizer = new SGD(network.params, LEARNING_RATE, MOMENTUM);
+const optimizer = new SGD(network.params, LEARNING_RATE);
 
 const trainingSet = new MNISTParser(
     join(__dirname, "../data/train-images.idx3-ubyte"),
