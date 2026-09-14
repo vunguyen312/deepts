@@ -58,11 +58,11 @@ export class SGD extends Optimizer {
     private stepWithoutMomentum(params: Parameters): void {
         const { gradWeights, gradBiases } = params;
         params.weights.maps((element, i) => 
-            element + this.learningRate * gradWeights.data[i]
+            element - this.learningRate * gradWeights.data[i]
         );
         
         params.biases.maps((element, i) => 
-            element + this.learningRate * gradBiases.data[i]
+            element - this.learningRate * gradBiases.data[i]
         );
     }
 
@@ -76,12 +76,12 @@ export class SGD extends Optimizer {
 
         const weightVelocity = this.weightVelocities[index];
         params.weights.maps((element, i) => 
-            element + this.learningRate * weightVelocity.data[i]
+            element - this.learningRate * weightVelocity.data[i]
         );
 
         const biasVelocity = this.biasVelocities[index];
         params.biases.maps((element, i) => 
-            element + this.learningRate * biasVelocity.data[i]
+            element - this.learningRate * biasVelocity.data[i]
         );
     }
 

@@ -165,25 +165,7 @@ export class Softmax extends ActivationLayer {
     }
 
     public backward(errors: Tensor): Tensor {
-        const outputShape = this.outputs.shape;
-
-        const rowLength = outputShape[outputShape.length - 1];
-        const rowCount = this.outputs.data.length / rowLength;
-        const deltas = new Tensor(errors.data, errors.shape);
-        for (let row = 0; row < rowCount; row++) {
-            const offset = row * rowLength;
-            let dot = 0;
-            for (let i = 0; i < rowLength; i++) {
-                dot += errors.data[offset + i] * this.outputs.data[offset + i];
-            }
-            
-            for (let i = 0; i < rowLength; i++) {
-                deltas.data[offset + i] = this.outputs.data[offset + i]
-                    * (errors.data[offset + i] - dot);
-            }
-        }
-
-        return deltas;
+        return errors;
     }
 }
 

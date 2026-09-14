@@ -104,7 +104,7 @@ for (let epoch = 0; epoch < NUM_EPOCHS; epoch++) {
     optimizer.step();
 }
 
-freezeToJSON(network, "src/weights/xor.json");
+freezeToJSON(network, "./weights/xor.json");
 ```
 
 ### MNIST Neural Network
@@ -154,7 +154,7 @@ for (let epoch = 0; epoch < NUM_EPOCHS; epoch++) {
     }
 }
 
-freezeToJSON(network, "src/weights/mnist.json");
+freezeToJSON(network, "./weights/mnist.json");
 ```
 
 ### Loading Networks

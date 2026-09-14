@@ -29,7 +29,7 @@ export class NeuralNetwork {
     public backward(inputData: Tensor, expectedOutput: Tensor): void {
         const output = this.forward(inputData);
 
-        let errors = expectedOutput.sub(output);
+        let errors = output.sub(expectedOutput);
         for (let i = this.layers.length - 1; i >= 0; i--) {
             errors = this.layers[i].backward(errors);
         }
