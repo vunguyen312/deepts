@@ -38,4 +38,4 @@ console.log("Result of [1, 1]: " + network.forward(in3).data);
 console.log("Result of [0, 1]: " + network.forward(in4).data);
 console.log("-----------------------------------------");
 
-freezeToJSON(network, join(__dirname, "./weights/xor.json"));
+freezeToJSON(network, join(__dirname, "./weights/xor2.json"));

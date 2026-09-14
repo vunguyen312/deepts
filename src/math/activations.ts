@@ -120,11 +120,8 @@ export class Softplus extends ActivationLayer {
 }
 
 export class Softmax extends ActivationLayer {
-    private outputs: Tensor;
-
     constructor() {
         super("softmax");
-        this.outputs = Tensor.zeros(1);
     }
 
     protected fn(_x: number): number {
@@ -159,8 +156,7 @@ export class Softmax extends ActivationLayer {
                 data[offset + i] /= expSum;
             }
         }
-
-        this.outputs = new Tensor(data, shape);
+        
         return inputs;
     }
 
